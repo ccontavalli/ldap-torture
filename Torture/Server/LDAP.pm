@@ -1,9 +1,12 @@
 #!/usr/bin/perl -w
 #
 
+use Data::Dumper;
+
 package Torture::Server::LDAP;
 
 use Net::LDAP;
+use Data::Dumper;
 use Check;
 use strict;
 
@@ -82,7 +85,7 @@ sub search(@) {
   my $dn=shift;
   my $scope=shift;
   my $filter=shift;
-  my @args=@_;
+  my @args=@{@_};
   
   Check::Value($dn);
   Check::Enum(['base', 'one', 'sub'], $scope);
@@ -99,9 +102,12 @@ sub delete(@) {
 
 sub add(@) {
   my $self=shift;
-  my @args = @_;
-
-  return $self->{'ldap'}->add(@args);
+  my @args=@_;
+  print Dumper(@args);
+  foreach my $arg (@args) {
+    print Dumper($arg)."\n";
+  }
+  return $self->{'ldap'}->add(@_);
 }
 
 sub copy() {

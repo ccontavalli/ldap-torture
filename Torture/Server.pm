@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+use Data::Dumper;
+
 package Torture::Server;
 use strict;
 

@@ -22,16 +22,16 @@ sub new {
 
   my $kind;
 
-  bless($self);
-  while(<$dir/*>) {
-    $self->load($_);
-  }
-
   $self->{'objects'} = [];
   $self->{'random'} = $random;
   $self->{'generator'} = $generator;
   $self->{'main'} = $main;
   $self->{'refe'} = $refe;
+
+  bless($self);
+  while(<$dir/*>) {
+    $self->load($_);
+  }
 
   return $self;
 }
@@ -56,17 +56,25 @@ sub perform() {
   }
 
     # Call function handler 
-  if(ref($operation->{'func'}) eq 'ARRAY') {
-    $result=&{$operation->{'func'}->[0]}(@{$operation->{'func'}}[1 .. @{$operation->{'func'}}], @args);
+  print "Function ".$operation->{'aka'}."\n";
+  if(ref($operation->{'func'}) ne 'ARRAY') {
+    $result=&{$operation->{'func'}}($self->{'main'}, $self->{'refe'}, @args);
+  } elsif($#{$operation->{'func'}} < 1) {
+    print "function no args". $#{$operation->{'func'}} ."\n";
+    $result=&{$operation->{'func'}->[0]}($self->{'main'}, $self->{'refe'}, @args);
   } else {
-    $result=&{$operation->{'func'}}(@args);
+    $result=&{$operation->{'func'}->[0]}($self->{'main'}, $self->{'refe'},
+    				@{$operation->{'func'}}[1 .. $#{$operation->{'func'}}], @args);
   }
 
     # Call result handler
-  if(ref($operation->{'res'}) == 'ARRAY') {
-    $result=&{$operation->{'res'}[0]}($self, $result, $operation->{'func'}->[1 .. $#{$operation->{'func'}}]);
+  if(ref($operation->{'res'}) ne 'ARRAY') {
+    $result=&{$operation->{'res'}}($self->{'main'}, $self->{'refe'}, $result, @args);
+  } elsif($#{$operation->{'res'}} < 1) {
+    $result=&{$operation->{'res'}->[0]}($self->{'main'}, $self->{'refe'}, $result, @args);
   } else {
-    $result=&{$operation->{'res'}}($self, $result);
+    $result=&{$operation->{'res'}->[0]}($self->{'main'}, $self->{'refe'}, $result,
+    				@{$operation->{'res'}}[1 .. $#{$operation->{'res'}}], @args);
   }
 
     # Finally, return back to caller
@@ -107,6 +115,59 @@ sub disable {
 sub known() {
   my $self=shift;
   return @{$self->{'generators'}};
+}
+
+sub action_server() {
+#  my $self=shift;
+  my $main=shift;
+  my $refe=shift;
+  my $action=shift;
+
+  my $result=$main->$action(@{@_});
+  return [$result, @_]; 
+}
+#my $var = { 'var' => 'val' };
+#my $var = [ ];
+#my %var = ( );
+#my @var = ( );
+#
+#my $var = \%hash;
+#my $var = \@array;
+#$var{'variabile'}
+#$var->{'variabile'}
+#
+#$var[0]
+#$var->[0]
+#
+#${$var}{'variabile'}
+#${$var}[0]
+
+sub ldap_fail() {
+#  my $self=shift;
+  my $main=shift;
+  my $refe=shift;
+  my $result=shift;
+
+  foreach my $err_expect (shift) {
+    if(${$result}[0]->code==$err_expect) {
+    #if(0==$err_expect) {
+      return undef;
+    }
+  }
+  return (${$result}[0]->code ? ${$result}[0]->code ." ". ${$result}[0]->error : ${$result}[0]->code." Operation Success");
+}
+
+sub ldap_succeed() {
+#  my $self=shift;
+  my $main=shift;
+  my $refe=shift;
+  my $result=shift;
+  
+  return ${$result}[0]->code ." ". ${$result}[0]->error if(${$result}[0]->code);
+  
+  print "operation ".${$result}[1][0]."\n";
+  #$refe->${$result}[1][0](1 .. @{${$result}[1]});
+  return undef;
 }
 
 1;

@@ -25,13 +25,13 @@ my $operations = [
             ' exist in the tree and has never been removed',
     func => [ \&Torture::Operations::action_server, 'delete'],
     args => [ 'dn/invented' ],
-    res => [ \&Torture::Operations::ldap_fail ]},
+    res => [ \&Torture::Operations::ldap_fail, 32]},
 
   { aka => 'delete/deleted',
     name => 'delete something which has already been deleted',
     func => [ \&Torture::Operations::action_server, 'delete'],
     args => [ 'dn/deleted' ],
-    res => [ \&Torture::Operations::ldap_fail ]}
+    res => [ \&Torture::Operations::ldap_fail, 68]}
 ];
 
 sub init() { return $operations; }
