@@ -1,0 +1,9 @@
+add(randomdn(cn:inserteddn):randomobject(cn))
+add(randomdn(cn:rootdn):randomobject(cn))
+delete(inserteddn)
+delete(randomdn)
+moverdn(inserteddn("haschildren"))
+loop(10:
+  random(
+    10:100:delete(inserteddn)
+  ))

@@ -1,0 +1,43 @@
+- la directory di lavoro principale e` 
+  diventata test. 
+
+- lo script principale e` operations.pl
+
+- uhm .. attualmente, viene fatta un'anonymous
+  bind. Andrebbe aggiunto del codice per prendere
+  dei parametri da riga di comando, o file di
+  configurazione, codice che poi andrebbe aggiunto
+  in Server.pm, in modo che tutti possano usufruirne.
+
+- in Server.pm, add dovrebbe essere splittata
+  in:
+  	add -> chiama sadd e iadd
+  	iadd -> inserisce nell'albero interno
+	sadd -> inserisce sul server vero
+
+  e cosi` tutte le altre funzioni del db. I
+  test, generalmente, chiamano tipo add e poi
+  verificano la consistenza dell'albero.
+  Delle volte, pero`, hanno bisogno di fare
+  le operazioni sull'ldap vero, fare delle
+  verifiche in base a com'era fatto l'albero
+  prima (utilizzando l'albero interno) e se
+  va tutto bene, aggiornare l'albero interno
+  per portarsi dietro le modifiche.
+
+- far prendere il seed da riga di comando
+- alcune funzioni in operations.pl dovrebbero
+  essere spostate in Random.pm, tipo 
+  randominserted, che esegue quella riga
+  di codice che si vede ogni tanto in operations.pl
+  per prendere a random un entry dall'array inserted
+- le funzioni di random non dovrebbero piu` prendere
+  range di valori o indicazioni su cosa restituir, ma 
+  ``etichette'' che indichino che cosa deve essere
+  preso. Un hash in Random::self dovrebbe poi indicare
+  il range di valori e ``come calcolare il random''. 
+  Il passo successivo sarebbe poi fare precaricare
+  l'hash da file di configurazione, o consentire a
+  operations.pl di passare l'hash (che caricherebbe
+  poi lui da chissadove).
+
