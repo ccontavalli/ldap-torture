@@ -40,4 +40,10 @@
   l'hash da file di configurazione, o consentire a
   operations.pl di passare l'hash (che caricherebbe
   poi lui da chissadove).
-
+- figure dei dn
+  - padre(x) relativo
+  - figli(x) relativo
+  - coetanei(x) relativo
+  - radice
+  - foglie
+  - rami

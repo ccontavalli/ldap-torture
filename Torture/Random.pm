@@ -420,7 +420,7 @@ sub randomparent() {
   $known=$self->{'server'}->inserted();
   return $rootdn if(!$known);
 
-    # Get a random number 
+    # 70% of case return a random object
   $number=$self->randomnumber(0, 9);
   return ($self->{'server'}->inserted())[$self->randomnumber(0, $known - 1)] if($number <= 6);
 
@@ -619,4 +619,6 @@ sub randomobject() {
 #  return undef if(!$class);
 #}
 #
+
+
 1;

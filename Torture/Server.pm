@@ -42,10 +42,53 @@ sub new() {
 sub search(@) {
   my $self=shift;
   my $dn=shift;
+  my $scope=shift;
   my @args=@_;
 
-  #print STDERR Dumper('base', $dn, @args);
-  return $self->{'ldap'}->search('base', $dn, @args);
+  if($scope ne "base" && $scope ne "one" && $scope ne "sub") {
+    print STDERR 'Server->search error invalid scope' ."\n";
+    $scope = 'base';
+  }
+
+#  print STDERR Dumper('base', $dn, 'scope' => $scope, 'filter' => '(objectclass=*)');
+#  my $mesg=$self->{'ldap'}->search('base', $dn, @args);
+  my $mesg=$self->{'ldap'}->search('base' => $dn, 'scope' => $scope, filter => '(objectclass=*)');
+
+  return $mesg; 
+}
+
+sub objectscheck() {
+  my $self=shift;
+  my $entries=shift;
+
+  foreach my $entry ($entries) {
+    my $dn=$entry->dn();
+    my $obj=$self->inserted($dn);
+    return ('code' => 999, 'error' => "dn not found -- ". $dn) if(!$obj);
+
+    my $attr;
+    foreach my $elem (@{(@{$obj})[1]}) {
+      if(!$attr) {
+         $attr=$elem;
+	 next;
+      }
+      my $values=$entry->get_value($attr);
+      my %values_ash;
+      foreach my $value (@{[$values]}) {
+          $values_ash{$value}=1;
+      }
+      foreach my $value (@{[$elem]}) {
+        return ('code' => 999, 'error' => "attrib values ($attr) in dn not found -- ".
+		$dn ." -- ". Dumper($value). Dumper($elem)) if(!$values_ash{$value});
+
+	undef $values_ash{$value};
+      }
+      return ('code' => 999, 'error' => "attrib values ($attr) in dn not found-- ".
+	     $dn ." -- ". Dumper($obj). Dumper(%values_ash)) if(!%values_ash);
+
+      undef $attr;
+    }
+  }
 }
 
 sub idelete(@) {
@@ -115,7 +158,7 @@ sub add(@) {
   my @args = @_;
   my $retval;
 
-  #print STDERR Dumper($dn, @args);
+#  print STDERR Dumper($parent, $dn, @args);
   $retval=$self->{'ldap'}->add($dn, @args);
   return $retval if($retval->code);
 
@@ -163,19 +206,23 @@ sub imove(@) {
     # Ok, if new name is relative,
     # make it absolute
   if($new !~ /,/) {
-    $parent=($new =~ /^([^,]*)/)[0];
+    $parent=($old =~ /,(.*)$/)[0];
     $new=$new . ',' . $parent;
   } else {
-    $parent=($new =~ /^([^,]*)/)[0];
+    $parent=($new =~ /,(.*)$/)[0];
   }
 
-  #print STDERR "deleting: $dn\n";
-  #print STDERR "parent: " . $self->{'child2parent'}->{$dn} . "\n";
-  #print STDERR "peers: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$dn}}}) . "\n";
+#  print STDERR "deleting: $old\n";
+#  print STDERR "parent: " . $self->{'child2parent'}->{$old} . "\n";
+#  print STDERR "creating: $new\n";
+#  print STDERR "parent: $parent\n";
+#  print STDERR "peers: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) . "\n";
+#  print STDERR "child: " . (defined($self->{'parent2child'}->{$old}) ?
+#  				join(' ', @{$self->{'parent2child'}->{$old}}) : "none") . "\n";
 
     # Update added list
-  delete($self->{'added'}->{$old});
   $self->{'added'}->{$new}=$self->{'added'}->{$old};
+  delete($self->{'added'}->{$old});
 
     # Update leaves/brenches list
   if($self->{'leaves'}->{$old}) {
@@ -190,18 +237,18 @@ sub imove(@) {
   if($self->{'parent2child'}->{$self->{'child2parent'}->{$old}}) {
     $self->{'parent2child'}->{$self->{'child2parent'}->{$old}}=
      	[grep(!/$old/, @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}})];
+#    print STDERR "peers 2: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) . "\n";
 
-    #print STDERR "peers 2: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$dn}}}) . "\n";
 
     if(!@{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) {
-      #print STDERR "peers 3: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$dn}}}) . "\n";
+#      print STDERR "peers 3: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) . "\n";
 
       delete($self->{'parent2child'}->{$self->{'child2parent'}->{$old}});
       
       $self->{'leaves'}->{$self->{'child2parent'}->{$old}} = 
       	$self->{'brenches'}->{$self->{'child2parent'}->{$old}};
 
-      #print STDERR ' ' . $self->{'child2parent'}->{$dn} . '\n';
+#      print STDERR ' ' . $self->{'child2parent'}->{$old} . "\n";
 
       $self->{'brenches'}->{$self->{'child2parent'}->{$old}}=undef;
       delete($self->{'brenches'}->{$self->{'child2parent'}->{$old}});
@@ -225,7 +272,6 @@ sub imove(@) {
 
   return;
 }
-
 
 sub move() {
   my $self = shift;
