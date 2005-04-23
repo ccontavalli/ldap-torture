@@ -383,21 +383,21 @@ sub dn_attr() {
 
 my %operations = (
 ### 	'parallelize' => '',						
-# 	'insertnew' => \&op_insertnew,
+ 	'insertnew' => \&op_insertnew,
 # 	'insertexisting' => \&op_insertexisting,
-# 	'insertnoparent' => \&op_insertnoparent,
-#	'deleteleaf' => \&op_deleteleaf,
-#	'deletenonexisting' => \&op_deletenonexisting,
+ 	'insertnoparent' => \&op_insertnoparent,
+	'deleteleaf' => \&op_deleteleaf,
+	'deletenonexisting' => \&op_deletenonexisting,
 ## 	'deletebrench' => \&op_deletebrench,
-# 	'moveleaf' => \&op_moveleaf,
-# 	'renameleaf' => \&op_renameleaf,
+## 	'moveleaf' => \&op_moveleaf,
+ 	'renameleaf' => \&op_renameleaf,
  	'moverenameleaf' => \&op_moverenameleaf,
 # 	'movebrench' => \&op_movebrench,
-# 	'renamebrench' => \&op_renamebrench,
+ 	'renamebrench' => \&op_renamebrench,
 ## 	'moverenamebrench' => \&op_moverenamebrench,
 ### 	'movetoexisting' => '',	
-# 	'movenonexisting' => \&op_movenonexisting,
-# 	'movetononexisting' => \&op_movetononexisting,
+ 	'movenonexisting' => \&op_movenonexisting,
+ 	'movetononexisting' => \&op_movetononexisting,
 ### 	'modifyattradd' => '',
 ### 	'modifyattrdel' => '',
 ### 	'modifyattrchg' => '',
@@ -415,8 +415,12 @@ $|=1;
 print STDERR "--- insertnew ---\n";
 &op_insertnew();
 &op_insertnew();
+&op_insertnew();
+&op_insertnew();
+&op_insertnew();
+&op_insertnew();
 
-my $op_num=50;
+my $op_num=10000;
 for(my $i=1; $i <= $op_num; $i++) {
   my $op = (keys(%operations))[$random->randomnumber(0, keys(%operations)-1)];
   print STDERR "$i --- $op ---\n";

@@ -75,7 +75,7 @@ sub objectscheck() {
       my $values=$entry->get_value($attr);
       my %values_ash;
       foreach my $value (@{[$values]}) {
-          $values_ash{$value}=1;
+        $values_ash{$value}=1;
       }
       foreach my $value (@{[$elem]}) {
         return ('code' => 999, 'error' => "attrib values ($attr) in dn not found -- ".
@@ -200,76 +200,94 @@ sub imove(@) {
   my $self=shift;
   my $old=shift;
   my $new=shift;
-  my $parent;
-  my $children;
+  my $parent_old;
+  my $parent_new;
 
     # Ok, if new name is relative,
     # make it absolute
+  $parent_old=($old =~ /,(.*)$/)[0];
   if($new !~ /,/) {
-    $parent=($old =~ /,(.*)$/)[0];
-    $new=$new . ',' . $parent;
+    $parent_new=$parent_old;
+    $new=$new . ',' . $parent_new;
   } else {
-    $parent=($new =~ /,(.*)$/)[0];
+    $parent_new=($new =~ /,(.*)$/)[0];
   }
 
-#  print STDERR "deleting: $old\n";
-#  print STDERR "parent: " . $self->{'child2parent'}->{$old} . "\n";
-#  print STDERR "creating: $new\n";
-#  print STDERR "parent: $parent\n";
-#  print STDERR "peers: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) . "\n";
-#  print STDERR "child: " . (defined($self->{'parent2child'}->{$old}) ?
-#  				join(' ', @{$self->{'parent2child'}->{$old}}) : "none") . "\n";
+  print STDERR "old: $old\n";
+  print STDERR "parent_old: " . $parent_old . "\n";
+  print STDERR ($parent_old ne $self->{'child2parent'}->{$old} ?
+  		"wrong parent ($self->{'child2parent'}->{$old})\n" :
+		"");
+  print STDERR "peers: " . join(' ', @{$self->{'parent2child'}->{$parent_old}}) . "\n";
+  print STDERR "child: " . (defined($self->{'parent2child'}->{$old}) ?
+  				join(' ', @{$self->{'parent2child'}->{$old}}) : "none") . "\n";
 
-    # Update added list
-  $self->{'added'}->{$new}=$self->{'added'}->{$old};
-  delete($self->{'added'}->{$old});
+  my @array = ($old);
+#  if(defined(@{$self->{'parent2child'}->{$old}}) && @{$self->{'parent2child'}->{$old}}) {
+#  }
 
-    # Update leaves/brenches list
-  if($self->{'leaves'}->{$old}) {
-    $self->{'leaves'}->{$new}=$self->{'leaves'}->{$old};
-    delete($self->{'leaves'}->{$old});
-  } else {
-    $self->{'brenches'}->{$new}=$self->{'brenches'}->{$old};
-    delete($self->{'brenches'}->{$old});
+  while(my $child = shift(@array)) {
+    my $child_new=($child eq $old ? "" : ($child=~/(.*)$old$/)[0]) .$new;
+    print STDERR "$child -> $child_new\n";
+
+    $self->{'added'}->{$child_new}=$self->{'added'}->{$child};
+    delete($self->{'added'}->{$child});
+
+    $self->{'child2parent'}->{$child_new}=$parent_new;
+    delete($self->{'child2parent'}->{$child});
+
+    if(!defined(@{$self->{'parent2child'}->{$child}}) || !@{$self->{'parent2child'}->{$child}}) {
+#      print STDERR Dumper($self->{'leaves'}->{$child});
+      $self->{'leaves'}->{$child_new} = $self->{'leaves'}->{$child};
+      $self->{'leaves'}->{$child}=undef;
+      delete($self->{'leaves'}->{$child});
+      next;
+    }
+
+    $self->{'parent2child'}->{$child_new}=() if(!defined($self->{'parent2child'}->{$child_new}));
+    foreach my $p2c (@{$self->{'parent2child'}->{$child}}) {
+      push(@array, $p2c);
+      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c=~/(.*)$old$/)[0] . $new);
+    }
+    delete($self->{'parent2child'}->{$child});
+
+    $self->{'brenches'}->{$child_new} = $self->{'brenches'}->{$child};
+    $self->{'brenches'}->{$child}=undef;
+    delete($self->{'brenches'}->{$child});
   }
 
-    # Ok, remove children from parent
-  if($self->{'parent2child'}->{$self->{'child2parent'}->{$old}}) {
-    $self->{'parent2child'}->{$self->{'child2parent'}->{$old}}=
-     	[grep(!/$old/, @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}})];
-#    print STDERR "peers 2: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) . "\n";
+#  return if($parent_old eq $parent_new);
 
+    # Ok, remove old dn from parent
+  if(@{$self->{'parent2child'}->{$parent_old}}) {
+    $self->{'parent2child'}->{$parent_old}=
+    	[grep(!/^$old$/, @{$self->{'parent2child'}->{$parent_old}})];
 
-    if(!@{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) {
-#      print STDERR "peers 3: " . join(' ', @{$self->{'parent2child'}->{$self->{'child2parent'}->{$old}}}) . "\n";
+    print STDERR "ex peers: " . join(' ', @{$self->{'parent2child'}->{$parent_old}}) . "\n";
 
-      delete($self->{'parent2child'}->{$self->{'child2parent'}->{$old}});
-      
-      $self->{'leaves'}->{$self->{'child2parent'}->{$old}} = 
-      	$self->{'brenches'}->{$self->{'child2parent'}->{$old}};
+    if(!@{$self->{'parent2child'}->{$parent_old}}) {
+      $self->{'leaves'}->{$parent_old}=$self->{'brenches'}->{$parent_old};
+      $self->{'brenches'}->{$parent_old}=undef;
+      delete($self->{'brenches'}->{$parent_old});
 
-#      print STDERR ' ' . $self->{'child2parent'}->{$old} . "\n";
-
-      $self->{'brenches'}->{$self->{'child2parent'}->{$old}}=undef;
-      delete($self->{'brenches'}->{$self->{'child2parent'}->{$old}});
+      delete($self->{'parent2child'}->{$parent_old});
     }
   }
 
-  delete($self->{'child2parent'}->{$old});
-
-  $children=$self->{'parent2child'}->{$old};
-  delete($self->{'parent2child'}->{$old});
-
-  $self->{'parent2child'}->{$new}=$children;
-  $self->{'child2parent'}->{$new}=$parent;
-  push(@{$self->{'parent2child'}->{$parent}}, $parent);
-  if($self->{'leaves'}->{$parent}) {
-    $self->{'brenches'}->{$parent} = 
-    		$self->{'leaves'}->{$parent};
-    $self->{'leaves'}->{$parent}=undef;
-    delete($self->{'leaves'}->{$parent});
+  push(@{$self->{'parent2child'}->{$parent_new}}, $new);
+  if($self->{'leaves'}->{$parent_new}) {
+    $self->{'brenches'}->{$parent_new}=$self->{'leaves'}->{$parent_new};
+    $self->{'leaves'}->{$parent_new}=undef;
+    delete($self->{'leaves'}->{$parent_new});
   }
-
+  print STDERR "new: $new\n";
+  print STDERR "parent_new: $parent_new\n";
+  print STDERR ($parent_new ne $self->{'child2parent'}->{$new} ?
+  		"wrong parent ($self->{'child2parent'}->{$new})\n" :
+		"");
+  print STDERR "peers_new: " . join(' ', @{$self->{'parent2child'}->{$parent_new}}) . "\n";
+  print STDERR "child: " . (defined($self->{'parent2child'}->{$new}) ?
+  				join(' ', @{$self->{'parent2child'}->{$new}}) : "none") . "\n";
   return;
 }
 
@@ -313,3 +331,4 @@ sub ldap() {
 }
 
 1;
+
