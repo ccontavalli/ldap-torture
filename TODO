@@ -1,36 +1,34 @@
-- la directory di lavoro principale e` 
-  diventata test. 
+- uhm .. allora, ho bisogno:
+	- di oggetti random validi di ldap
+	- operazioni random da effettuare
+	- oggetti validi gia` parte del database ldap
+  ho bisogno, poi:
+  	- di un concetto di contesto, per fare dei
+	  giochettini affinita`
+	- di poter tunare molto bene il rng da file
+	  di configurazione
 
-- lo script principale e` operations.pl
+- Random::Generator::player -> legge l'output di logger,
+  accumulator o replayer e rifornisce i numeri random 
+  richiesti
 
-- uhm .. attualmente, viene fatta un'anonymous
-  bind. Andrebbe aggiunto del codice per prendere
-  dei parametri da riga di comando, o file di
-  configurazione, codice che poi andrebbe aggiunto
-  in Server.pm, in modo che tutti possano usufruirne.
-
-- in Server.pm, add dovrebbe essere splittata
-  in:
-  	add -> chiama sadd e iadd
-  	iadd -> inserisce nell'albero interno
-	sadd -> inserisce sul server vero
-
-  e cosi` tutte le altre funzioni del db. I
-  test, generalmente, chiamano tipo add e poi
-  verificano la consistenza dell'albero.
-  Delle volte, pero`, hanno bisogno di fare
-  le operazioni sull'ldap vero, fare delle
-  verifiche in base a com'era fatto l'albero
-  prima (utilizzando l'albero interno) e se
-  va tutto bene, aggiornare l'albero interno
-  per portarsi dietro le modifiche.
+- Random::Generator::replayer -> come accumulator, ma che
+  invece di tenere in memoria tutti i valori, utilizza il
+  seed per riprendere la generazione
 
 - far prendere il seed da riga di comando
-- alcune funzioni in operations.pl dovrebbero
-  essere spostate in Random.pm, tipo 
-  randominserted, che esegue quella riga
-  di codice che si vede ogni tanto in operations.pl
-  per prendere a random un entry dall'array inserted
+
+- allora ... il test deve essere ripetibile, sempre,
+  per cui. Tre metodi per riprodurlo (e per memorizzarlo):
+  	- tramite semplice seed - il seed e` _sempre_
+	  in qualche modo outputtato 
+	- tramite registrazione di tutti i numeri 
+	  random generati
+	- tramite registrazione di tutte le operazioni
+	  effettuate
+- la generazione dei numeri random deve essere estremamente
+  tunabile, per cui
+
 - le funzioni di random non dovrebbero piu` prendere
   range di valori o indicazioni su cosa restituir, ma 
   ``etichette'' che indichino che cosa deve essere

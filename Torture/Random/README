@@ -1,0 +1,68 @@
+- Random::Primitive -> forniscono numeri random in
+		        un determinato range.
+
+- Random::Manager -> dato un contesto, un random necessario,
+		una configurazione globale, restituisce un
+		random
+
+- Random::Generator -> fornisce i random veri e propri
+
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+NOO!!!!!!!!!!!!
+WRONG!!!
+
+Lato Applicazione (lato torturatore):
+  - un'applicazione utilizza un 
+  	Random::Generator
+    (razionale -- applicazione chiede un random da 
+     utilizzare in un determinato contesto)
+
+  - un Random::Manager, internamente, utilizza
+    un Random::Generator
+    (razionale -- il random::manager, affidandosi ad
+     un utente, stabilisce il random appropriato da
+     utilizzare, che pero` deve essere generato da
+     quaclun altro, tipo un Random::Generator)
+
+  - un Random::Generator, internamente, utilizza
+    una Random::Primitive
+    (razionale -- un Random::Generator e` strutturato
+     in modo da restituire il tipo di dato richiesto.
+     Internamente, pero`, ha bisogno di avere dei numeri
+     casuali, per cui, si affida ad un Random::Primitive,
+     che fornisce _solo_ numeri)
+
+  Random::Manager(Random::Generator(Random::Primitive))
+
+Adesso, il Random::Generator ha bisogno di accedere ad uno
+schema ldap, per cui, sara` tipo
+
+  Random::Manager(Random::Generator(Schema::LDAP, Random::Primitive))
+
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Lato Applicazione (lato torturatore):
+  - un'applicazione utilizza un 
+  	Random::Generator
+    (razionale -- applicazione ha bisogno di avere
+     dei particolari oggetti random, non vuole saperne
+     della logica dietro ad un random)
+
+  - Random::Generator, internamente, utilizza un
+    Random::Manager, che cerca una logica nei numeri
+    random da restituire.
+
+  - Internamente, un Random::Manager utilizza un 
+    Random::Primitive. Una Random::Primitive, e` quella
+    che alla fine restituisce il random vero e proprio. 
+
+  - un Random::Manager, non e` altro che una Random::Primitive
+    un po' piu` evoluta... per cui, .. brutta fine fa!
+
+Per cui:
+
+  Random::Generator(Schema::LDAP, Random::Manager(Random::Primitive))
+
+  Random::Generator(Schema::LDAP, Random::Primitive)
+
