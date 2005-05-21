@@ -4,7 +4,8 @@ use strict;
 use Torture::Random::Primitive::rand;
 use Data::Dumper;
 
-print STDERR "ARGV: $ARGV[0]\n";
+my $seed = $ARGV[0] || "(none)";
+print STDERR "ARGV: $seed\n";
 my $random = Torture::Random::Primitive::rand->new($ARGV[0]);
 
 print 'random number (1, 100): ' . $random->number(1, 100) . "\n";

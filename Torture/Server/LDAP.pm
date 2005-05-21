@@ -45,8 +45,8 @@ sub new() {
   my $connection;
 
     # Perform some checks 
-  Check::array($options) if($options);
-  Check::array($bindauth) if($bindauth);
+  Check::Array($options) if($options);
+  Check::Array($bindauth) if($bindauth);
  
     # Provide default options
   $server = $server || 'localhost';
@@ -81,8 +81,8 @@ sub search(@) {
   my $filter=shift;
   my @args=@_;
   
-  Check::value($dn);
-  Check::enum(['base', 'one', 'sub'], $scope);
+  Check::Value($dn);
+  Check::Enum(['base', 'one', 'sub'], $scope);
 
   return $self->{'ldap'}->search('base' => $dn, 'scope' => $scope, 'filter' => ($filter || '(objectclass=*)'));
 }
@@ -108,8 +108,8 @@ sub move() {
 
   my $retval;
 
-  Check::value($new);
-  Check::value($old);
+  Check::Value($new);
+  Check::Value($old);
 
   my ($nchild, $nparent)=($new =~ /([^,]*),(.*)/);
 

@@ -5,8 +5,8 @@ package Torture::Random::Generator;
 use strict;
 use Net::LDAP;
 
+use Check;
 use Torture::Debug;
-use Torture::Check;
 use Torture::Random::Attributes;
 
 my %g_bl_object = (
@@ -21,19 +21,29 @@ sub new() {
   my $random = shift;
   my $attributes = shift;
 
-  Torture::Check::Class('Torture::Schema::.*', $schema);
-  Torture::Check::Class('Torture::Random::Primitive::.*', $random);
+  Check::Class('Torture::Schema::.*', $schema);
+  Check::Class('Torture::Random::Primitive::.*', $random);
 
   $self->{'schema'} = $schema;
   $self->{'random'} = $random;
   if($attributes) {
-    Torture::Check::Class('Torture::Random::Attributes::.*', $schema);
+    Check::Class('Torture::Random::Attributes.*', $attributes);
     $self->{'attribhdlr'} = $attributes;
   } else {
     $self->{'attribhdlr'} = Torture::Random::Attributes->new($random);
   }
 
+  $self->{'bl_object'} = \%g_bl_object;
+  $self->{'bl_attributes'} = \%g_bl_attribute;
+
+  while(my $key = shift) {
+    my $value = shift;
+    $self->{$key}=$value;
+  }
+
   bless($self);
+  $self->prepare();
+
   return $self;
 }
 
@@ -50,12 +60,12 @@ sub prepare($$) {
   my $bl_attributes = shift;
 
     # Ok, initialize blacklists 
-  $bl_object = $bl_object || \%g_bl_object;
-  $bl_attributes = $bl_attributes || \%g_bl_attributes;
+  $bl_object = $bl_object || $self->{'bl_object'};
+  $bl_attributes = $bl_attributes || $self->{'bl_attributes'};
 
     # Black list must be hash ref
-  Test::Check::Hash($bl_object);
-  Test::Check::Hash($bl_attributes);
+  Check::Hash($bl_object);
+  Check::Hash($bl_attributes);
 
     # Register locally handled attributes
   $self->{'attribhdlr'}->register('1.3.6.1.4.1.1466.115.121.1.37', 
@@ -65,7 +75,7 @@ sub prepare($$) {
   # self->structural = list of structural objects
   # self->auxiliary = list of auxiliary object classes
   ($self->{'attributes'}, $self->{'structural'}, $self->{'auxiliary'}) =
-  	$self->{'schema'}->prepare();
+  	$self->{'schema'}->prepare($self->{'attribhdlr'});
   $self->{'prepared'} = 1;
 
   delete($self->{'schema'});

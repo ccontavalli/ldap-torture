@@ -15,7 +15,7 @@ sub die(@) {
 
 sub Enum($$) {
   my ($valid, $value) = @_;
-  Check::array($valid);
+  Check::Array($valid);
   return if(grep(/^\Q$value\E$/, @{$valid}));
   Check::die([caller()], 'enum', 'invalid value: ' . ($value ? '(undef)' : $value), keys(%{$valid}));
 }
@@ -49,6 +49,12 @@ sub Natural($) {
   my $number = shift;
   return if(defined($number) && $number =~ /[0-9]+/);
   Check::die([caller()], 'natural', ($number ? $number : '(unknown)') . ' !~ /[0-9]+/');
+}
+
+sub Func($) {
+  my $func = shift;
+  return if(defined($func) && ref($func) eq 'CODE');
+  Check::die([caller()], 'func', ($func ? $func . ' (' . ref($func) . ')' : '(undefined)') . ' is not a function');
 }
 
 1;

@@ -281,21 +281,24 @@ sub new() {
   my $self = {};
   my $name = shift;
   my $server = shift;
-  my (%attrs) = @_;
+  my $known = shift;
   my $ldap;
 
   Check::Class('Net::LDAP.*', $server);
   
     # Remember server
-  foreach (keys(%attrs)) {
-    $self->{$_} = $attrs{$_};
+  while(my $key = shift) {
+    my $value=shift;
+    $self->{$key} = $value;
   }
 
     # Load schema file 
   $self->{'schema'}=$server->schema() 
   	if(!$self->{'schema'});
-
   bless($self);
+
+    # Prepare, if we were given enough arguments 
+  $self->prepare($known) if($known);
   return $self;
 }
 
