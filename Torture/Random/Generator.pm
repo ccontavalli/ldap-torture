@@ -84,6 +84,7 @@ sub prepare($$) {
 
 sub parent() {
   my $self = shift;
+  my $context = shift;
   my $rootdn = shift;
   my $number;
   my $known;
@@ -94,7 +95,7 @@ sub parent() {
   return $rootdn if(!$known);
 
     # 70% of case return a random object
-  $number=$self->{'random'}->number(0, 9);
+  $number=$self->{'random'}->number(context($context), 0, 9);
   return ($self->{'server'}->inserted())[$self->{'random'}->number(0, $known - 1)] if($number <= 6);
 
     # Return rootdn in any other case

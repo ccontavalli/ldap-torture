@@ -1,19 +1,30 @@
 #!/usr/bin/perl -w
 
 package Torture::Random::Primitive::rand;
+require Exporter;
 
 use strict;
 use Check;
 
-#use base qw(Torture::Random::Primitive);
-our @ISA;
+our (@ISA, @EXPORT);
 use Torture::Random::Primitive;
-@ISA = ('Torture::Random::Primitive');
+
+@EXPORT = ('context');
+@ISA = ('Torture::Random::Primitive', 'Exporter');
+
+sub context(@) { 
+  my $context = shift;
+  my @array = @_;
+  my @retval = @{$context || []};
+
+  push(@retval, (caller)[0], @_);
+  return \@retval; 
+}
 
 sub new() {
   my $name = shift;
   my $seed = shift;
-  my $self = {};
+  my $self = $name->SUPER::new();
 
   if($seed) {
     $self->{'seed'} = $seed;
@@ -24,7 +35,7 @@ sub new() {
     srand($self->{'seed'});
   }
 
-  bless($self);
+  bless($self, $name);
   return $self;
 }
 
@@ -43,6 +54,7 @@ sub seed() {
 
 sub number() {
   my $self = shift;
+  my $context = shift;
   my $min = shift;
   my $max = shift;
 
