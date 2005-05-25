@@ -38,6 +38,14 @@ sub Value($) {
   Check::die([caller()], 'value', 'undefined value');
 }
 
+sub Hinerits($$) {
+  my $class=shift;
+  my $name=shift;
+  return if($class && $name && $class->isa($name));
+  Check::die([caller()], 'hinerits', ($class ? $class : '(unknown)') .
+  	' does not hinerit from ' . ($name ? $name : '(unknown)'));
+}
+
 sub Class($$) {
   my $class = shift;
   my $name = shift;

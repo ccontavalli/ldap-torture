@@ -20,9 +20,11 @@ sub new() {
   my $schema = shift;
   my $random = shift;
   my $attributes = shift;
+  my $nodes = shift;
 
   Check::Class('Torture::Schema::.*', $schema);
   Check::Class('Torture::Random::Primitive::.*', $random);
+  Check::Hinerits('Torture::Random::Tracker', $nodes);
 
   $self->{'schema'} = $schema;
   $self->{'random'} = $random;
@@ -32,6 +34,8 @@ sub new() {
   } else {
     $self->{'attribhdlr'} = Torture::Random::Attributes->new($random);
   }
+  $self->{'nodes'} = $nodes;
+
 
   $self->{'bl_object'} = \%g_bl_object;
   $self->{'bl_attributes'} = \%g_bl_attribute;
@@ -110,6 +114,7 @@ sub dn(@) {
   $attrib=(keys(%{$self->{'attributes'}}))[$self->{'random'}->number(0, keys(%{$self->{'attributes'}})-1)] if(!$attrib);
 
   my $generated;
+    ### XXX This is wrong! escaping should not be performed here!
   $generated = $self->{'generators'}->{$self->{'attributes'}->{$attrib}}($self, $attrib);
   $generated =~ s/([,+"\\<>;#])/\\$1/g;
   $generated =~ s/^ /\\ /;

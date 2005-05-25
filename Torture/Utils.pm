@@ -1,4 +1,32 @@
+#!/usr/bin/perl -w
+#
 
+package Torture::Utils;
+use strict;
+
+sub attribEscape($) {
+  my $dn=shift;
+
+  $dn =~ s/([,+"\\<>;#])/\\$1/g;
+  $dn =~ s/^ /\\ /;
+  $dn =~ s/ $/\\ /;
+
+  return $dn; 
+}
+
+sub dnAbsolute($) {
+  return !dnRelative(@_);
+}
+
+sub dnRelative($) {
+  my $dn = shift;
+  return scalar($dn =~ /[^\\],/);
+}
+
+sub dnParent($) {
+  my $dn=shift;
+  return ($dn =~ (/(\\,|[^,]*)*[^\\],(.*)/))[1]
+}
 
 sub objectscheck() {
   my $self=shift;
@@ -33,3 +61,5 @@ sub objectscheck() {
     }
   }
 }
+
+1;

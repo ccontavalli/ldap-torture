@@ -64,5 +64,5 @@ Per cui:
 
   Random::Generator(Schema::LDAP, Random::Manager(Random::Primitive))
 
-  Random::Generator(Schema::LDAP, Random::Primitive)
+  Random::Generator(Schema::LDAP, Random::Primitive, )
 

@@ -7,6 +7,9 @@ use Net::LDAP;
 use Check;
 use strict;
 
+our (@ISA);
+@ISA = ('Torture::Server');
+
 =item new()
 
 Creates a new Torture::Server object, connected to 
@@ -101,7 +104,7 @@ sub add(@) {
   return $self->{'ldap'}->add(@args);
 }
 
-sub move() {
+sub copy() {
   my $self = shift;
   my $old = shift;
   my $new = shift;
@@ -111,14 +114,21 @@ sub move() {
   Check::Value($new);
   Check::Value($old);
 
-  my ($nchild, $nparent)=($new =~ /([^,]*),(.*)/);
+    # Ok, calculate all needed values
+  my ($nchild, $nparent) = (Torture::Utils::dnChild($new), Torture::Utils::dnParent($new));
+  my ($ochild, $oparent) = (Torture::Utils::dnChild($old), Torture::Utils::dnParent($old));
 
-  return $self->{'ldap'}->moddn($old, 
-  	 'newrdn' => $nchild,
-  	 'newsuperior' => $nparent, 
-	 'deleteoldrdn' => 1) if($nparent && $nchild);
+    # Now, if this is just a rename...
+  if(!$nparent || $nparent eq $oparent) {
+    return $self->{'ldap'}->moddn($old, 'newrdn' => $nchild, @_);
+  }
+    
+    # Otherwise, tell LDAP we need to change the superior
+  return $self->{'ldap'}->moddn($old, 'newrdn' => $new, 'newsuperior' => $nparent, @_); 
+}
 
-  return $self->{'ldap'}->moddn($old, 'newrdn' => $new, 'deleteoldrdn' => 1); 
+sub move() {
+  return $self->copy(@_, 'deleteoldrdn' => 1);
 }
 
 1;
