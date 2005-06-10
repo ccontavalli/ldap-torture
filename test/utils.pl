@@ -9,4 +9,6 @@ my $value="cn=f;lk(jds sld,k!fj ";
 print 'dn: ' . $dn . ' -- parent: ' . Torture::Utils::dnParent($dn) . "\n";
 print 'dnstronzo: ' . $dnstronzo . ' -- parent: ' . Torture::Utils::dnParent($dnstronzo) . "\n";
 print 'escaping: ' . $value . ' -- escaped: ' . Torture::Utils::attribEscape($value) . "\n";
+print 'relative: ' . $dn . ' - ' . Torture::Utils::dnRelative($dn) . ' -- relative (stronzo): ' . 
+	$value . ' - ' . Torture::Utils::dnRelative(Torture::Utils::attribEscape($value)) . "\n";
 

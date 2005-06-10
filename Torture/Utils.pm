@@ -20,7 +20,7 @@ sub dnAbsolute($) {
 
 sub dnRelative($) {
   my $dn = shift;
-  return scalar($dn =~ /[^\\],/);
+  return !scalar($dn =~ /[^\\],/);
 }
 
 sub dnParent($) {

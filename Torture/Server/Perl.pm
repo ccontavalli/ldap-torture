@@ -5,6 +5,10 @@ package Torture::Server::Perl;
 use Check;
 use strict;
 
+use Torture::Utils;
+use Torture::Server;
+use Torture::Tracker;
+
 our (@ISA);
 @ISA = ('Torture::Server', 'Torture::Tracker');
 
@@ -12,20 +16,20 @@ sub new() {
   my $class=shift;
   my $self=$class->SUPER::new(@_);
 
-  $self->{'child2parent'} = {};
   $self->{'parent2child'} = {};
   $self->{'childdata'} = {};
   $self->{'rootdns'} = ();
 
   foreach my $rootdn (@_) {
     push(@{$self->{'rootdns'}}, $rootdn);
-    $self->{'child2parent'}->{$rootdn}='';
     $self->{'parent2child'}->{$rootdn}=();
     $self->{'childdata'}->{$rootdn}=[];
+
+    $self->SUPER::add($rootdn);
   }
 
   bless($self, $class);
-  return;
+  return $self;
 }
 
 sub handle() {
@@ -38,28 +42,40 @@ sub search() {
 
 sub delete(@) {
   my $self=shift;
-  my $dn=shift;
   my $children;
+
+  my $dn=shift;
+  my $parent;
 
   Check::Value($dn);
 
-    # Ok, tell tracker to forget about this 
-    # node as well 
+    # Ok, give a chance to tracker to 
+    # update its own references
   $self->SUPER::delete($dn);
 
-    # Ok, unlink dn from parent
-  if($self->{'parent2child'}->{$self->{'child2parent'}->{$dn}}) {
-    $self->{'parent2child'}->{$self->{'child2parent'}->{$dn}}=
-     	[grep(!/$dn/, @{$self->{'parent2child'}->{$self->{'child2parent'}->{$dn}}})];
+    # Ok, calculate parent of current node
+  $parent=Torture::Utils::dnParent($dn);
+  Check::Value($parent);
 
-    delete($self->{'parent2child'}->{$self->{'child2parent'}->{$dn}});
-      if(!@{$self->{'parent2child'}->{$self->{'child2parent'}->{$dn}}});
+    # Remove reference to children from parent
+  if($self->{'parent2child'}->{$parent}) {
+    $self->{'parent2child'}->{$parent}=
+     	[grep(!/$dn/, @{$self->{'parent2child'}->{$parent}})];
+
+      # If parent has no more children, remove 
+      # parent from parent2child hash
+    delete($self->{'parent2child'}->{$parent})
+      if(!@{$self->{'parent2child'}->{$parent}});
   }
-  delete($self->{'child2parent'}->{$dn});
   delete($self->{'childdata'}->{$dn});
 
+    # Now, get the children of this node 
   $children=$self->{'parent2child'}->{$dn};
-  delete($self->{'parent2child'}->{$dn});
+
+    # This operation should not be necessary
+  delete($self->{'parent2child'}->{$dn}); 
+
+    # Remove each children of the current node
   if($children) {
     foreach my $child (@{$children}) {
       $self->delete($child);
@@ -69,29 +85,92 @@ sub delete(@) {
   return;
 }
 
-sub handle() {
-  return undef;
-}
-
 sub add(@) {
   my $self=shift;
   my $dn=shift;
   my @args = @_;
-  my $retval;
 
   Check::Value($dn);
 
-  my $parent = ($dn =~ /^([^,]*)/)[0];
-  return undef
-    if(!$parent || !defined($self->{'parent2child'}->{$parent}));
+    # Get name of current parent
+  my $parent = Torture::Utils::dnParent($dn);
+  Check::Value($dn);
 
+    # Ok, give a chance to tracker to 
+    # update its own references
   $self->SUPER::add($dn, @_);
+
+    # Now, add node...
   push(@{$self->{'parent2child'}->{$parent}}, $dn);
-  $self->{'child2parent'}->{$dn}=$parent;
   $self->{'childdata'}->{$dn}=\@args;
   $self->{'parent2child'}->{$dn}=();
 
-  return $retval;
+  return;
+}
+
+sub copy(@) {
+  my $self=shift;
+  my $old=shift;
+  my $new=shift;
+
+  Check::Value($old);
+  Check::Value($new);
+
+  my $parent_old;
+  my $parent_new;
+
+    # Ok, if new name is relative,
+    # make it absolute
+  $parent_old=Torture::Utils::dnParent($old);
+  if(Torture::Utils::dnRelative($new)) {
+    $parent_new=Torture::Utils::dnParent($old);
+    $new=$new . ',' . $parent_new;
+  } else {
+    $parent_new=Torture::Utils::dnParent($new);
+  }
+
+    # Ok, now we should have all needed data
+  Check::Value($parent_new);
+  Check::Value($parent_old);
+
+    # Now, walk this node and each of its own
+    # children
+  my @array = ($old);
+  while(my $child = shift(@array)) {
+      # Calculate new name of children
+    my $child_new=($child =~ /(.*)$old$/)[0] . $new;
+    
+      # Give tracker a chance to update its own 
+      # references
+    $self->SUPER::copy($child, $child_new);
+
+      # Ok, data of children must now be indexed under new name
+    $self->{'childdata'}->{$child_new}=$self->{'childdata'}->{$child};
+
+      # If the children we are renaming is a leaf (eg, has no children), we are done
+    if(!defined($self->{'parent2child'}->{$child}) || !@{$self->{'parent2child'}->{$child}}) {
+      $self->{'parent2child'}->{$child_new}=[];
+      next;
+    }
+
+      # Otherwise, just walk each children, and...
+    $self->{'parent2child'}->{$child_new}=() if(!defined($self->{'parent2child'}->{$child_new}));
+    foreach my $p2c (@{$self->{'parent2child'}->{$child}}) {
+        # ... remember we have to update it
+      push(@array, $p2c);
+        # ... update the relations...
+      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c =~ /(.*)$old$/)[0] . $new);
+    }
+  }
+
+    # Ok, remove old dn from parent
+  if(defined($self->{'parent2child'}->{$parent_old}) && @{$self->{'parent2child'}->{$parent_old}}) {
+    $self->{'parent2child'}->{$parent_old}=
+    	[grep(!/^$old$/, @{$self->{'parent2child'}->{$parent_old}})];
+  }
+
+  push(@{$self->{'parent2child'}->{$parent_new}}, $new);
+  return;
 }
 
 sub move(@) {
@@ -107,29 +186,40 @@ sub move(@) {
 
     # Ok, if new name is relative,
     # make it absolute
-  $parent_old=($old =~ /,(.*)$/)[0];
-  if($new !~ /,/) {
-    $parent_new=$parent_old;
+  $parent_old=Torture::Utils::dnParent($old);
+  if(Torture::Utils::dnRelative($new)) {
+    $parent_new=Torture::Utils::dnParent($old);
     $new=$new . ',' . $parent_new;
   } else {
-    $parent_new=($new =~ /,(.*)$/)[0];
+    $parent_new=Torture::Utils::dnParent($new);
   }
 
-  my @array = ($old);
+    # Ok, now we should have all needed data
+  Check::Value($parent_new);
+  Check::Value($parent_old);
 
+    # Now, walk this node and each of its own
+    # children
+  my @array = ($old);
   while(my $child = shift(@array)) {
-    my $child_new=($child eq $old ? "" : ($child=~/(.*)$old$/)[0]) .$new;
+      # Calculate new name of children
+    my $child_new=($child =~ /(.*)$old$/)[0] . $new;
     
-      # Ok, data of children must be now indexed under new node
+      # Give tracker a chance to update its own 
+      # references
+    $self->SUPER::move($child, $child_new);
+
+      # Ok, data of children must now be indexed under new name
     $self->{'childdata'}->{$child_new}=$self->{'childdata'}->{$child};
     delete($self->{'childdata'}->{$child});
 
-      # Link new children with parent, and unlink old children from old parent
-    $self->{'child2parent'}->{$child_new}=$parent_new;
-    delete($self->{'child2parent'}->{$child});
-
       # If the children we are renaming is a leaf (eg, has no children), we are done
-    next if(!defined(@{$self->{'parent2child'}->{$child}}) || !@{$self->{'parent2child'}->{$child}});
+    if(!defined($self->{'parent2child'}->{$child}) || !@{$self->{'parent2child'}->{$child}}) {
+      delete($self->{'parent2child'}->{$child});
+      $self->{'parent2child'}->{$child_new}=[];
+
+      next;
+    }
 
       # Otherwise, just walk each children, and...
     $self->{'parent2child'}->{$child_new}=() if(!defined($self->{'parent2child'}->{$child_new}));
@@ -137,14 +227,14 @@ sub move(@) {
         # ... remember we have to update it
       push(@array, $p2c);
         # ... update the relations...
-      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c=~/(.*)$old$/)[0] . $new);
+      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c =~ /(.*)$old$/)[0] . $new);
     }
       # The old node has no more children now :)
     delete($self->{'parent2child'}->{$child});
   }
 
     # Ok, remove old dn from parent
-  if(@{$self->{'parent2child'}->{$parent_old}}) {
+  if(defined($self->{'parent2child'}->{$parent_old}) && @{$self->{'parent2child'}->{$parent_old}}) {
     $self->{'parent2child'}->{$parent_old}=
     	[grep(!/^$old$/, @{$self->{'parent2child'}->{$parent_old}})];
 

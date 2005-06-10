@@ -9,9 +9,8 @@ use Check;
 sub new(@) {
   my $name = shift;
   my $self = {};
-  my $rootdn = shift;
 
-  $self->{'rootdn'} = $rootdn || "";
+  $self->{'rootdns'} = \@_ ;
   $self->{'nodes'} = {};
   $self->{'leaves'} = {};
   $self->{'branches'} = {};
@@ -28,27 +27,24 @@ sub add() {
 
   Check::Value($dn);
 
-  my $parent = Torture::Utils::parentdn($dn);
+  my $parent = Torture::Utils::dnParent($dn);
+
+    # If this object was previously removed,
+    # now it's there again...
+  delete($self->{'deleted'}->{$dn});
 
     # Ok, remember the dn was inserted
   $self->{'nodes'}->{$dn}++;
   $self->{'leaves'}->{$dn}++;
 
-    # Try to stay on the safe side 
-  return if(!$parent);
+    # Try to stay on the safe side avoid adding any
+    # rootdn parent on the branches tree
+  return if(!$parent || grep(/,$parent$/, @{$self->{'rootdns'}}));
 
-    # Ok, remember parent now has one more
-    # children
+    # Ok, remember parent now has one more children
   $self->{'nodes'}->{$parent}++;
-
-    # This condition is almost useless, since
-    # ``for sure'' this node has now children
-  if($self->{'nodes'}->{$parent} > 1) {
-    delete($self->{'leaves'}->{$parent});
-    $self->{'branches'}->{$parent}++;
-  } else {
-    $self->{'leaves'}->{$parent}++;
-  }
+  delete($self->{'leaves'}->{$parent});
+  $self->{'branches'}->{$parent}++;
 
   return;
 }
@@ -61,7 +57,7 @@ sub delete() {
 
     # return immediately if this node had
     # not been tracked 
-  return if(!$self->{'nodes'}->{$dn});
+  return if(!defined($self->{'nodes'}->{$dn}));
 
     # Start by deleting any reference to the
     # node, remembering it was deleted
@@ -72,7 +68,7 @@ sub delete() {
 
     # Look for parent node
   my $parent = Torture::Utils::dnParent($dn);
-  return if(!$parent);
+  return if(!$parent || !$self->{'nodes'}->{$parent});
 
     # Now, tell parent he has one less 
     # children
@@ -81,7 +77,7 @@ sub delete() {
     # If it has no more children, it
     # now is a leaf
   if($self->{'nodes'}->{$parent} <= 1) {
-    delete($self->{'branches'}->{$dn});
+    delete($self->{'branches'}->{$parent});
     $self->{'leaves'}->{$parent}++;
   }
 
@@ -105,8 +101,8 @@ sub move(@) {
 
     # Now, just update references, without
     # caring about reentrancy
-  $self->delete($old);
-  $self->add($new);
+  $self->Torture::Tracker::delete($old);
+  $self->Torture::Tracker::add($new);
 
   return;
 }
@@ -128,7 +124,7 @@ sub copy(@) {
 
     # Now, just update references, without
     # caring about reentrancy
-  $self->add($new);
+  $self->Torture::Tracker::add($new);
 
   return;
 }
