@@ -20,6 +20,7 @@ sub new(@) {
   return $self;
 }
 
+
 sub add() {
   my $self = shift;
   my $dn = shift;
@@ -129,5 +130,9 @@ sub copy(@) {
   return;
 }
 
+sub inserted() {
+  my $self = shift;
+  return keys(%{$self->{'nodes'}});
+}
 
 1;

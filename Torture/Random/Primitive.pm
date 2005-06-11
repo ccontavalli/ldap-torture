@@ -3,7 +3,6 @@
 package Torture::Random::Primitive;
 
 use strict;
-no strict 'refs';
 
 use Check;
 our @ISA;
@@ -28,14 +27,13 @@ sub text() {
   Check::Natural($min);
   Check::Natural($max);
 
-  print "$name\n";
-  my ($lenght) = $self->number(&{$name . '::context'}($context, 'lenght'), $min, $max);
+  my ($lenght) = $self->number($self->context($context, 'lenght'), $min, $max);
   my ($string);
 
   @allowed = ( 'a' .. 'z', 'A' .. 'Z', '0' .. '9') 
   	if(!@allowed);
   
-  $string .= $allowed[$self->number(&{$name . '::context'}($context, 'char', $lenght), 0, $#allowed)]  
+  $string .= $allowed[$self->number($self->context($context, 'char', $lenght), 0, $#allowed)]  
  	while($lenght--);
 
   return $string;
@@ -47,7 +45,7 @@ sub element() {
   my $array = shift; 
 
   Check::Array($array);
-  return $array->[$self->number(context($context), 0, $#{$array})];
+  return $array->[$self->number($self->context($context), 0, $#{$array})];
 }
 
 1;

@@ -11,4 +11,3 @@ my $schema=Torture::Schema::LDAP->new($server->handle());
 my $attrib=Torture::Random::Attributes->new();
 
 print Dumper($schema->prepare($attrib->known()));
-

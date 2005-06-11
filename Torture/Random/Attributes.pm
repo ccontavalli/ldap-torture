@@ -7,47 +7,56 @@ use Net::LDAP;
 
 use Torture::Debug;
 use Check;
+use Data::Dumper;
 
 sub g_random_cn($$) {
   my $self = shift;
-  Check::Class('Torture::Random::Generator.*', $self->{'random'});
-  return $self->{'random'}->text(2, 30);
+  my $context = shift;
+
+  return $self->{'random'}->text($self->{'random'}->context($context), 2, 30);
 }
 
 sub g_random_phone($$) {
   my $self = shift;
-  Check::Class('Torture::Random::Generator.*', $self->{'random'});
-  return '+' . $self->{'random'}->number(100000, 999999) . $self->{'random'}->number(100000, 999999);
+  my $context = shift;
+
+  return '+' . $self->{'random'}->number($self->{'random'}->context($context, 'firsthalf'), 100000, 999999) . 
+  	       $self->{'random'}->number($self->{'random'}->context($context, 'secondhalf'), 100000, 999999);
 }
 
 sub g_random_string($$) {
   my $self = shift;
-  Check::Class('Torture::Random::Generator.*', $self->{'random'});
-  return $self->{'random'}->text(2, 127);
+  my $context = shift;
+
+  return $self->{'random'}->text($self->{'random'}->context($context), 2, 127);
 }
 
 sub g_random_number($$) {
   my $self = shift;
-  Check::Class('Torture::Random::Generator.*', $self->{'random'});
-  return $self->{'random'}->number(0, 4000000000);
+  my $context = shift;
+
+  return $self->{'random'}->number($self->{'random'}->context($context), 0, 4000000000);
 }
 
 sub g_random_password($$) {
   my $self = shift;
-  Check::Class('Torture::Random::Generator.*', $self->{'random'});
-  return $self->{'random'}->text(2, 32);
+  my $context = shift;
+
+  return $self->{'random'}->text($self->{'random'}->context($context), 2, 32);
 }
 
 sub g_random_boolean($$) {
   my $self = shift;
-  Check::Class('Torture::Random::Generator.*', $self->{'random'});
-  return $self->{'random'}->number(0, 1) ? 'FALSE' : 'TRUE';
+  my $context = shift;
+
+  return $self->{'random'}->number($self->{'random'}->context($context), 0, 1) ? 'FALSE' : 'TRUE';
 }
 
 sub g_random_int($$) {
   my $self = shift;
-  Check::Class('Torture::Random::Generator.*', $self->{'random'});
-  return $self->{'random'}->number(0, 10000);
+  my $context = shift;
+
+  return $self->{'random'}->number($self->{'random'}->context($context), 0, 10000);
 }
 
 my %gname = (
@@ -103,7 +112,7 @@ sub new($) {
   my $self = {};
 
   if($random) {
-    Check::Class('Torture::Random::Generator.*', $random);
+    Check::Class('Torture::Random::Primitive.*', $random);
     $self->{'random'} = $random;
   }
 
@@ -122,8 +131,6 @@ sub new($) {
 sub random() {
   my $self = shift;
   my $random = shift;
-
-  Check::Class('Torture::Random::Generator.*', $random);
   $self->{'random'} = $random;
 }
 
@@ -167,19 +174,22 @@ sub known() {
 
 sub generate() {
   my $self = shift;
+  my $rcontext = shift;
   my $oid = shift;
-  my $context = $self;
+  my $context = shift;
   my $gname = $oid;
 
   Check::Value($oid);
   
+#  print $oid . "\n";
+#  print Dumper($self);
   $gname=$self->{'attrib'}{$oid} 
   	if($self->{'attrib'}{$oid});
 
   $context=$self->{'context'}
   	if($self->{'context'}{$gname});
 
-  return &{$self->{'gname'}{$gname}}($context, @_)
+  return &{$self->{'gname'}{$gname}}($self, $self->{'random'}->context($rcontext), $context, @_)
   		if($self->{'gname'}{$gname});
 
   Check::Die();

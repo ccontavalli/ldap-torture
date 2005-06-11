@@ -43,7 +43,7 @@ be passed to Net::Ldap->bind
 sub new() {
   my $self = {};
   my $name = shift;
-  my ($server, $binddn, $options, $bindauth) = @_;
+  my ($rootdn, $server, $binddn, $options, $bindauth) = @_;
 
   my $connection;
 
@@ -128,6 +128,7 @@ sub copy() {
 }
 
 sub move() {
+  my $self = shift;
   return $self->copy(@_, 'deleteoldrdn' => 1);
 }
 

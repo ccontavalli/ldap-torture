@@ -9,10 +9,10 @@ use Check;
 our (@ISA, @EXPORT);
 use Torture::Random::Primitive;
 
-@EXPORT = ('context');
 @ISA = ('Torture::Random::Primitive', 'Exporter');
 
 sub context(@) { 
+  my $self = shift;
   my $context = shift;
   my @array = @_;
   my @retval = @{$context || []};

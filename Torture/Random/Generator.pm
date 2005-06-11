@@ -8,6 +8,7 @@ use Net::LDAP;
 use Check;
 use Torture::Debug;
 use Torture::Random::Attributes;
+use Torture::Utils;
 
 my %g_bl_object = (
 	"1.3.6.1.4.1.4203.1.4.1" => '65: objectClass "1.3.6.1.4.1.4203.1.4.1" only allowed in the root DSE' );
@@ -24,7 +25,7 @@ sub new() {
 
   Check::Class('Torture::Schema::.*', $schema);
   Check::Class('Torture::Random::Primitive::.*', $random);
-  Check::Hinerits('Torture::Random::Tracker', $nodes);
+  Check::Hinerits('Torture::Tracker', $nodes);
 
   $self->{'schema'} = $schema;
   $self->{'random'} = $random;
@@ -34,7 +35,7 @@ sub new() {
   } else {
     $self->{'attribhdlr'} = Torture::Random::Attributes->new($random);
   }
-  $self->{'nodes'} = $nodes;
+  $self->{'track'} = $nodes;
 
 
   $self->{'bl_object'} = \%g_bl_object;
@@ -53,7 +54,7 @@ sub new() {
 
 sub g_random_objectclass($$) {
   my $self = shift;
-  return $self->{'random'}->class();
+  return $self->class();
 }
 
 #  "1.3.6.1.4.1.1466.115.121.1.37" => 'objectclass',
@@ -78,8 +79,8 @@ sub prepare($$) {
   # self->attributes = list of attributes
   # self->structural = list of structural objects
   # self->auxiliary = list of auxiliary object classes
-  ($self->{'attributes'}, $self->{'structural'}, $self->{'auxiliary'}) =
-  	$self->{'schema'}->prepare($self->{'attribhdlr'});
+  ($self->{'attributes'}, $self->{'structural'}, $self->{'auxiliary'}) 
+  	= $self->{'schema'}->prepare($self->{'attribhdlr'}->known());
   $self->{'prepared'} = 1;
 
   delete($self->{'schema'});
@@ -91,49 +92,40 @@ sub parent() {
   my $context = shift;
   my $rootdn = shift;
   my $number;
-  my $known;
+  my @known;
 
     # Ok, return rootdn (or undef), if there are no entries
     # we can use as parents 
-  $known=$self->{'server'}->inserted();
-  return $rootdn if(!$known);
-
-    # 70% of case return a random object
-  $number=$self->{'random'}->number(context($context), 0, 9);
-  return ($self->{'server'}->inserted())[$self->{'random'}->number(0, $known - 1)] if($number <= 6);
-
-    # Return rootdn in any other case
-  return $rootdn;
+  @known=$self->{'track'}->inserted();
+  return $rootdn if(!@known);
+  return $self->{'random'}->element($self->{'random'}->context($context), \@known); 
 }
 
 sub dn(@) {
   my $self = shift;
-  my ($parent, $attrib) = @_;
+  my ($context, $parent, $attrib) = @_;
 
   $self->prepare() if(!$self->{'prepared'});
-  $attrib=(keys(%{$self->{'attributes'}}))[$self->{'random'}->number(0, keys(%{$self->{'attributes'}})-1)] if(!$attrib);
 
-  my $generated;
-    ### XXX This is wrong! escaping should not be performed here!
-  $generated = $self->{'generators'}->{$self->{'attributes'}->{$attrib}}($self, $attrib);
-  $generated =~ s/([,+"\\<>;#])/\\$1/g;
-  $generated =~ s/^ /\\ /;
-  $generated =~ s/ $/\\ /;
+  $attrib=$self->{'random'}->element($self->{'random'}->context($context, 'type'), [keys(%{$self->{'attributes'}})]) if(!$attrib);
 
-  return $attrib . '=' . $generated . ($parent ? ',' . $parent : '');
+  my $generated = $self->{'attribhdlr'}->generate($self->{'random'}->context($context, 'value'), $self->{'attributes'}->{$attrib});
+  return $attrib . '=' . Torture::Utils::attribEscape($generated) . ($parent ? ',' . $parent : '');
 }
 
 sub class() {
   my $self = shift;
+  my $context = shift;
 
   $self->prepare() if(!$self->{'prepared'});
-  my $class=(keys(%{$self->{'structural'}}))[$self->{'random'}->number(0, scalar(keys(%{$self->{'structural'}}))-1)];
+  my $class=$self->{'random'}->element($self->{'random'}->context($context), [keys(%{$self->{'structural'}})]);
 
   return $class;
 }
 
 sub object() {
   my $self = shift;
+  my $context = shift;
   my $parent = shift;
   my $dnattr = shift;
   my $dnvalue = shift;
@@ -153,17 +145,17 @@ sub object() {
       return undef;
     }
   } else {
-    $class=$self->{'random'}->class();
+    $class=$self->class();
     $object=$self->{'structural'}->{$class};
   }
 
     # TODO: we randomly choose to use a must, and, if no must,
     # we try with a may ...
   if(!$dnattr) {
-#    print STDERR "object: " . join(' ', keys(%{$object->{'must'}})) . "\n";
-    $dnattr=(keys(%{$object->{'must'}}))[$self->{'random'}->number(0, scalar(keys(%{$object->{'must'}}))-1)];
+    $dnattr=$self->{'random'}->element($self->{'random'}->context($context, 'dnkind/must'), [keys(%{$object->{'must'}})]);
+
     if(!$dnattr) {
-      $dnattr=(keys(%{$object->{'may'}}))[$self->{'random'}->number(0, scalar(keys(%{$object->{'may'}}))-1)];
+      $dnattr=$self->{'random'}->element($self->{'random'}->context($context, 'dnkind/may'), [keys(%{$object->{'may'}})]);
       $dnprop=$object->{'may'}->{$dnattr};
     } else {
       $dnprop=$object->{'must'}->{$dnattr};
@@ -178,7 +170,7 @@ sub object() {
       Torture::Debug::message('random/warning', "unknown generator for: $dnattr\n");
       return undef;
     }
-    $dnvalue=$self->{'generators'}->{$dnprop}($self, $dnattr);
+    $dnvalue=$self->{'attribhdlr'}->generate($self->{'random'}->context($context, 'dnvalue'), $self->{'attributes'}->{$dnattr});
     if(!$dnvalue) {
       Torture::Debug::message('random/warning', "generator returned undefined value for: $dnattr\n");
       return undef;
@@ -187,7 +179,6 @@ sub object() {
   $return[0]=$dnattr . '=' . $dnvalue . ($parent ? ',' . $parent : '');
   $return[1]='attr';
   $return[2]=();
-  #$return[1]->{'attr'}={};
 
   push(@{$return[2]}, $dnattr);
   push(@{$return[2]}, $dnvalue);
@@ -195,7 +186,7 @@ sub object() {
     # Add all must
   foreach my $must (keys(%{$object->{'must'}})) {
     next if($dnattr eq $must);
-    my $value=$self->{'generators'}->{$object->{'must'}->{$must}}($self, $must);
+    my $value=$self->{'attribhdlr'}->generate($self->{'random'}->context($context, 'must/value/' . $must), $self->{'attributes'}->{$must});
     push(@{$return[2]}, $must);
     push(@{$return[2]}, $value);
     Torture::Debug::message('random/warning', "generator returned undefined value for: $must\n")
@@ -207,13 +198,9 @@ sub object() {
   foreach my $may (keys(%{$object->{'may'}})) {
     next if($dnattr eq $may);
 
-    if($self->{'random'}->number(0, 1)) {
-      #print STDERR "dmay: $may " . $object->{'may'}->{$may} . "\n";
-      next;
-    }
-    my $value=$self->{'generators'}->{$object->{'may'}->{$may}}($self, $may);
+    next if($self->{'random'}->number($self->{'random'}->context($context, 'may'), 0, 1));
+    my $value=$self->{'attribhdlr'}->generate($self->{'random'}->context($context, 'may/value/' . $may), $self->{'attributes'}->{$may});
 
-    #print STDERR "amay: $may " . $object->{'may'}->{$may} . "\n";
     push(@{$return[2]}, $may);
     push(@{$return[2]}, $value);
     Torture::Debug::message('random/warning', "generator returned undefined value for: $may\n")

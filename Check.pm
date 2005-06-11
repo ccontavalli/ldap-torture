@@ -28,8 +28,8 @@ sub Hash($) {
 
 sub Array($) {
   my $value = shift;
-  return if(ref($value) eq 'ARRAY');
-  Check::die([caller()], 'hash', 'value is not a hash ref: ' . ($value ? '(undef)' : $value), ref($value));
+  return if($value && ref($value) eq 'ARRAY');
+  Check::die([caller()], 'hash', 'value is not an array ref ' . ($value ? $value . ' ' . ref($value) : '(undef)'));
 }
 
 sub Value($) {
@@ -41,9 +41,9 @@ sub Value($) {
 sub Hinerits($$) {
   my $class=shift;
   my $name=shift;
-  return if($class && $name && $class->isa($name));
-  Check::die([caller()], 'hinerits', ($class ? $class : '(unknown)') .
-  	' does not hinerit from ' . ($name ? $name : '(unknown)'));
+  return if($class && $name && $name->isa($class));
+  Check::die([caller()], 'hinerits', ($name ? $name : '(unknown)') .
+  	' does not hinerit from ' . ($class ? $class : '(unknown)'));
 }
 
 sub Class($$) {
