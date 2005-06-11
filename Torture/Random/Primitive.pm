@@ -44,6 +44,8 @@ sub element() {
   my $context = shift;
   my $array = shift; 
 
+  return undef if(!$array);
+
   Check::Array($array);
   return $array->[$self->number($self->context($context), 0, $#{$array})];
 }

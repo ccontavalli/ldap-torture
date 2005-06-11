@@ -135,4 +135,20 @@ sub inserted() {
   return keys(%{$self->{'nodes'}});
 }
 
+sub branches() {
+  my $self = shift;
+  return keys(%{$self->{'branches'}});
+}
+
+sub leaves() {
+  my $self = shift;
+  return keys(%{$self->{'leaves'}});
+}
+
+sub deleted() {
+  my $self = shift;
+  return keys(%{$self->{'deleted'}});
+}
+
+
 1;

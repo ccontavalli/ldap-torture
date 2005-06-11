@@ -40,6 +40,13 @@ sub search() {
   Check::value(undef);
 }
 
+sub get() {
+  my $self=shift;
+  my $dn=shift;
+
+  return $self->{'childdata'}->{$dn};
+}
+
 sub delete(@) {
   my $self=shift;
   my $children;

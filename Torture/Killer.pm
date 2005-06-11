@@ -27,18 +27,18 @@ sub start() {
   my $context = shift;
   my $limit = shift || -1;
  
-  my ($count = 0, $rand, $status = undef);
-  my %known = $self->{'operations'}->known();
+  my ($count, $rand, $status) = (0, undef, undef);
+  my @known = $self->{'operations'}->known();
 
   for(; !$status && $count != $limit; $count ++) {
-    $rand=$self->{'random'}->element($self->{'random'}->context($context, 'operation'), [keys(%known)]);
+    $rand=$self->{'random'}->element($self->{'random'}->context($context, 'operation'), \@known);
     $status=$self->{'operations'}->perform($self->{'random'}->context($context, $count), $rand);
   }
 
   print "SEED\n";
   print $self->{'random'}->seed() . "\n";
   print "===================\n";
-  print ($status ? $status : 'maximum number of operations performed') . "\n";
+  print (($status ? $status : 'maximum number of operations performed') . "\n");
 
   return;
 }

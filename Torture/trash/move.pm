@@ -1,34 +1,11 @@
 #!/usr/bin/perl -w
 
-use Torture::Server;
 use Data::Dumper;
+
+use Torture::Check;
 use strict;
 
-my $random = Torture::Random->new($server);
-
-my $rootdn='dc=masobit,dc=net';
-
-  # 2 way of recording a test: 
-  #   1 - record initial random seeds
-  #   2 - register all operations
-  #   3 - introduce an affinity concept for operations
-
-sub mydie(@) {
-  print STDERR "Seed: " . $random->seed() . "\n";
-  print STDERR join(' ', @_, "\n");
-  exit 1;
-}
-
-sub myskip(@) {
-  print STDERR "\tskipped: ".join(' ', @_)."\n";
-  return -1;
-}
-
-sub mydesc(@) {
-  my $desc=shift;
-  print STDERR "\t$desc\n";
-  return;
-}
+package Torture::Operations;
 
   # Have some sort of probability for each operation
 sub op_insertnew() {
@@ -44,7 +21,6 @@ sub op_insertnew() {
   } while($server->inserted($dn));
 
   mydesc(${$object}[0]);
-  #print Dumper(@{$object});
   my $mesg=$server->add($parent, @{$object});
   $mesg->code && mydie($mesg->code . ': unexpected add error -- ' . $mesg->error . ' -- ' . Dumper($object));
 }
@@ -56,7 +32,6 @@ sub op_insertexisting() {
   return myskip("no object") if(!$object);
 
   mydesc($dn);
-  #print Dumper(@{[$dn, @{$object}]});
   my $mesg=$server->add(dn_parent($dn), $dn, @{$object});
   mydie($mesg->code . ': unexpected error  -- ' . 
 	$mesg->error . ' -- ' . Dumper($object)) if($mesg->code != 68);
@@ -74,10 +49,6 @@ sub op_insertnoparent() {
   my $mesg=$server->add($dn, @{$object});
   mydie($mesg->code . ': unexpected addnoparent error -- ' .
   	$mesg->error . ' -- ' . Dumper($object)) if($mesg->code != 32);
-
-#    # XXX Verify object was not really added
-#  $mesg=$server->search(${$object}[0], 'scope' => 'base', 'filter' => '(objectclass=*)');
-#  mydie($mesg->code . ': unexpected addnoparent error -- ' . $mesg->error) if(!$mesg->code || $mesg->code != 32);
 
   return;
 }
@@ -178,7 +149,6 @@ sub op_deletenonexisting() {
   return;
 }
 
-##### Yet implemented ######
 sub op_movenonexisting() {
   my $newdn=dn_existing();
   return myskip('no newdn') if(!$newdn);
@@ -229,8 +199,6 @@ sub op_getexistingdn() {
 
   mydesc($dn);
   my $mesg=$server->search($dn, 'one');
-
-  print Dumper($mesg->entries());
   if($mesg->code) {
     mydie($mesg->code .': unexpected getexistingone error -- '. $mesg->error);
   }
@@ -350,36 +318,6 @@ sub dn_nonexisting_child_brench() {
   return $dn;
 }
 
-sub dn_child() {
-  mydesc("not yet implemented");
-  return;
-}
-
-sub dn_parent() {
-  my $dn = shift;
-  return ($dn =~ /,(.*)$/);
-}
-
-sub dn_anchestor() {
-  mydesc("not yet implemented");
-  return;
-}
-
-sub dn_attr() {
-  my $dn = shift;
-  return ($dn =~ /([^=]*)/)[0];
-}
-
-# 	ok	ok		no	waited success	moveleaf, movebrench
-#	ok	ok		ok	waited error	movetoexisting
-# 	ok	no		no	waited error	movetononexisting
-# 	no	ok		ok	waited error	movenonexisting, movetoexisting
-# 	no	ok		no	waited error	movenonexisting
-# 	no	no		no	waited error	movenonexisting, movetononexisting
-# 	ok	no		ok	impossible	-
-# 	no	no		ok	impossible	-
-#
-
 my %operations = (
 ### 	'parallelize' => '',						
  	'insertnew' => \&op_insertnew,
@@ -409,22 +347,72 @@ my %operations = (
 # 	'getexistingdn' => \&op_getexistingdn,
 );
 
-$|=1;
+sub enable() {
+  my $self = shift;
+  my $name = shift;
 
-print STDERR "--- insertnew ---\n";
-&op_insertnew();
-&op_insertnew();
-&op_insertnew();
-&op_insertnew();
-&op_insertnew();
-&op_insertnew();
+  Torture::Check::Value($name);
+  Torture::Check::Value($operations{$name});
 
-my $op_num=10000;
-for(my $i=1; $i <= $op_num; $i++) {
-  my $op = (keys(%operations))[$random->randomnumber(0, keys(%operations)-1)];
-  print STDERR "$i --- $op ---\n";
-  $operations{$op}();
+  $self->{'operations'}{$name}=$operations{$name};
 }
 
-print STDERR "--- deleteleaf ---\n";
-while(!defined(&op_deleteleaf())) {};
+sub enabled() {
+  my $self = shift;
+  my $name = shift;
+
+  Torture::Check::Value($name);
+  return $self->{'operations'}{$name};
+}
+
+sub known() {
+  my $self = shift;
+  my $name = shift;
+
+  Torture::Check::Value($name);
+  return $operations{$name};
+}
+
+sub disable() {
+  my $self = shift;
+  my $name = shift;
+
+  Torture::Check::Value($name);
+  delete($self->{'operations'}{$name});
+}
+
+sub register() {
+  my $self = shift;
+  my $name = shift;
+  my $oper = shift;
+
+  Torture::Check::Value($name);
+  Torture::Check::Function($oper);
+
+  $self->{'operations'}{$name}=$oper;
+}
+
+sub unregister() {
+  my $self = shift;
+  return $self->disable(@_);
+}
+
+sub new() {
+  my $self = {};
+  my $name = shift;
+  my $random = shift;
+  my $checker = shift;
+
+  Torture::Check::Class('Torture::Random.*', $random);
+  Torture::Check::Class('Torture::Checker.*', $checker);
+
+  $self->{'random'}=$random;
+  $self->{'checker'}=$checker;
+  $self->{'operations'}=%operations;
+
+  bless($self);
+  return $self;
+}
+
+
+1;

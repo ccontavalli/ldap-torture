@@ -29,7 +29,7 @@ sub Hash($) {
 sub Array($) {
   my $value = shift;
   return if($value && ref($value) eq 'ARRAY');
-  Check::die([caller()], 'hash', 'value is not an array ref ' . ($value ? $value . ' ' . ref($value) : '(undef)'));
+  Check::die([caller()], 'array', 'value is not an array ref ' . ($value ? $value . ' ' . ref($value) : '(undef)'));
 }
 
 sub Value($) {

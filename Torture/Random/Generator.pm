@@ -14,6 +14,95 @@ my %g_bl_object = (
 	"1.3.6.1.4.1.4203.1.4.1" => '65: objectClass "1.3.6.1.4.1.4203.1.4.1" only allowed in the root DSE' );
 my %g_bl_attribute = ();
 
+sub g_dn_invented() {
+  my $self=shift;
+  my $context=shift;
+
+  my $parent;
+
+  $parent=$self->parent($context);
+  return undef if(!$parent);
+
+  return $self->dn($context, $parent);
+}
+
+sub g_dn_inserted_brench() {
+  my $self=shift;
+  my $context=shift;
+
+  return $self->{'random'}->element($context, [$self->{'track'}->branches()]);
+}
+
+sub g_dn_inserted_leaf() {
+  my $self=shift;
+  my $context=shift;
+
+  return $self->{'random'}->element($context, [$self->{'track'}->leaves()]);
+}
+
+sub g_dn_deleted() {
+  my $self=shift;
+  my $context=shift;
+
+  return $self->{'random'}->element($context, $self->{'track'}->deleted());
+}
+
+sub g_object_noparent() {
+  my $self=shift;
+  my $context=shift;
+
+  my $parent;
+
+    # Choose a random parent
+  $parent=$self->parent($context);
+  return undef if(!$parent);
+
+    # Invent a random child
+  $parent=$self->dn($context, $parent);
+  return undef if(!$parent);
+
+    # Create a random object under this non-existing child
+  return $self->object($context, $parent);
+}
+
+sub g_object_ok() {
+  my $self=shift;
+  my $context=shift;
+
+  my $parent;
+
+    # Choose a random parent
+  $parent=$self->parent($context);
+  return undef if(!$parent);
+
+    # Create a random object under this non-existing child
+  return $self->object($context, $parent);
+}
+
+sub g_object_existing() {
+  my $self=shift;
+  my $context=shift;
+
+  my $parent;
+
+    # Choose a random parent
+  $parent=$self->parent($context);
+  return undef if(!$parent);
+
+    # Try to fetch object and return it
+  return $self->{'track'}->get($parent);
+}
+
+my %generators = (
+  'dn/invented' => \&g_dn_invented,
+  'dn/inserted/brench' => \&g_dn_inserted_brench,
+  'dn/inserted/leaf' => \&g_dn_inserted_leaf,
+  'dn/deleted' => \&g_dn_deleted,
+  'object/noparent' => \&g_object_noparent,
+  'object/ok' => \&g_object_ok,
+  'object/existing' => \&g_object_existing
+);
+
 sub new() {
   my $self = {};
   my $name = shift;
@@ -36,6 +125,7 @@ sub new() {
     $self->{'attribhdlr'} = Torture::Random::Attributes->new($random);
   }
   $self->{'track'} = $nodes;
+  $self->{'generators'} = \%generators;
 
 
   $self->{'bl_object'} = \%g_bl_object;
@@ -50,6 +140,18 @@ sub new() {
   $self->prepare();
 
   return $self;
+}
+
+sub generate()  {
+  my $self = shift;
+  my $context = shift;
+  my $what = shift;
+
+  Check::Value($what);
+  print "generating $what\n";
+  Check::Value($self->{'generators'}->{$what});
+
+  return &{$self->{'generators'}->{$what}}($self, $context);
 }
 
 sub g_random_objectclass($$) {
