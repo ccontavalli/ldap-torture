@@ -7,6 +7,7 @@ use Torture::Schema::LDAP;
 use Torture::Random::Attributes;
 use Torture::Random::Generator;
 use Torture::Random::Primitive::rand;
+use Torture::Killer;
 
 use Data::Dumper;
 
