@@ -97,17 +97,19 @@ sub delete(@) {
   my $self=shift;
   my $dn=shift;
 
+  Torture::Debug::message('LDAP/delete', 'delete ' . $dn . "\n");
   return $self->{'ldap'}->delete($dn);
 }
 
 sub add(@) {
   my $self=shift;
+  my $object=shift;
   my @args=@_;
-  print Dumper(@args);
-  foreach my $arg (@args) {
-    print Dumper($arg)."\n";
-  }
-  return $self->{'ldap'}->add(@_);
+
+  Torture::Debug::message('LDAP/add', 'add ' . Dumper($object, @args));
+  Check::Array($object);
+
+  return $self->{'ldap'}->add(@{$object}, @args);
 }
 
 sub copy() {
@@ -126,15 +128,19 @@ sub copy() {
 
     # Now, if this is just a rename...
   if(!$nparent || $nparent eq $oparent) {
+    print "rename! $old, $nchild\n";
+    Torture::Debug::message('LDAP/rename', 'rename ' . $old . ' ' . $nchild);
     return $self->{'ldap'}->moddn($old, 'newrdn' => $nchild, @_);
   }
     
     # Otherwise, tell LDAP we need to change the superior
-  return $self->{'ldap'}->moddn($old, 'newrdn' => $new, 'newsuperior' => $nparent, @_); 
+  Torture::Debug::message('LDAP/move', 'move ' . $old . ' ' . $nchild . ',' . $nparent);
+  return $self->{'ldap'}->moddn($old, 'newrdn' => $nchild, 'newsuperior' => $nparent, @_); 
 }
 
 sub move() {
   my $self = shift;
+
   return $self->copy(@_, 'deleteoldrdn' => 1);
 }
 

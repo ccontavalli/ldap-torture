@@ -9,21 +9,32 @@ sub Die(@) {
 
 sub die(@) {
   my ($caller, $check, @parameters) = @_;
-  die $caller->[0] . ':' . $caller->[1] . ':' . $caller->[2] . ' (' . $check . 
-  	') assertion failed: ' . (@parameters ? join(' ', @parameters) : '(unknown)') . "\n";
+  my $i;
+
+  print STDERR "assertion failed: " . $caller->[0] . ':' . $caller->[1] . ':' . $caller->[2] . "\n    (" . $check . 
+  	') ' . (@parameters ? join(' ', @parameters) : '(unknown)') . "\n";
+
+  print STDERR "---------------\nstack trace follows:\n";
+  for($i=1; $i < 10; $i++) {
+    my ($package, $filename, $line, $sub)=caller($i);
+    last if(!defined($package));
+    print STDERR '   ' . $package . ':' . $filename . ':' . $line . ':' . $sub . "\n";
+  }
+
+  CORE::die 'Aborted.';
 }
 
 sub Enum($$) {
   my ($valid, $value) = @_;
   Check::Array($valid);
   return if(grep(/^\Q$value\E$/, @{$valid}));
-  Check::die([caller()], 'enum', 'invalid value: ' . ($value ? '(undef)' : $value), keys(%{$valid}));
+  Check::die([caller()], 'enum', 'invalid value: ' . ($value ? $value : '(undef)'), keys(%{$valid}));
 }
 
 sub Hash($) {
   my $value = shift;
   return if(ref($value) eq 'HASH');
-  Check::die([caller()], 'hash', 'value is not a hash ref: ' . ($value ? '(undef)' : $value), ref($value));
+  Check::die([caller()], 'hash', 'value is not a hash ref: ' . (defined($value) ? $value : '(undef)'), (defined($value) ? ref($value) : '(undef)'));
 }
 
 sub Array($) {

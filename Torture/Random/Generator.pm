@@ -10,9 +10,6 @@ use Torture::Debug;
 use Torture::Random::Attributes;
 use Torture::Utils;
 
-my %g_bl_object = (
-	"1.3.6.1.4.1.4203.1.4.1" => '65: objectClass "1.3.6.1.4.1.4203.1.4.1" only allowed in the root DSE' );
-my %g_bl_attribute = ();
 
 sub g_dn_invented() {
   my $self=shift;
@@ -23,28 +20,42 @@ sub g_dn_invented() {
   $parent=$self->parent($context);
   return undef if(!$parent);
 
-  return $self->dn($context, $parent);
+  return ($self->dn($context, $parent));
 }
 
 sub g_dn_inserted_brench() {
   my $self=shift;
   my $context=shift;
 
-  return $self->{'random'}->element($context, [$self->{'track'}->branches()]);
+  return ($self->{'random'}->element($context, [$self->{'track'}->branches()]));
 }
 
 sub g_dn_inserted_leaf() {
   my $self=shift;
   my $context=shift;
 
-  return $self->{'random'}->element($context, [$self->{'track'}->leaves()]);
+  my $obj=$self->{'random'}->element($context, [$self->{'track'}->leaves()]);
+
+  return ($obj ? ($obj) : undef);
+}
+
+sub g_dn_root() {
+  my $self=shift;
+  my $context=shift;
+  my $root;
+
+  $root=$self->{'random'}->element($context, [$self->{'track'}->roots()]);
+  return ($root ? ($root) : undef);
 }
 
 sub g_dn_deleted() {
   my $self=shift;
   my $context=shift;
 
-  return $self->{'random'}->element($context, $self->{'track'}->deleted());
+
+  my $obj=$self->{'random'}->element($context, [$self->{'track'}->deleted()]);
+
+  return ($obj ? ($obj) : undef);
 }
 
 sub g_object_noparent() {
@@ -62,7 +73,49 @@ sub g_object_noparent() {
   return undef if(!$parent);
 
     # Create a random object under this non-existing child
-  return $self->object($context, $parent);
+  return ($self->object($context, $parent));
+}
+
+sub g_object_new() {
+  my $self=shift;
+  my $context=shift;
+
+  my $parent;
+  my $object;
+
+    # Choose a random parent
+  $parent=$self->parent($context);
+  return undef if(!$parent);
+
+    # Create a random object under this non-existing child
+  while(1) {
+    $object=$self->object($context, $parent);
+    return undef if(!$object);
+
+    return ($object) if(!$self->{'track'}->exist($object->[0]));
+  }
+}
+
+sub g_dn_inserted_leaf_node() {
+  my $self=shift;
+  my $context=shift;
+  my ($leaf, $parent, $rela);
+
+    # Get a random leaf of the tree
+  $leaf=$self->{'random'}->element($context, [$self->{'track'}->leaves()]);
+  return undef if(!$leaf);
+
+    # Get the relative dn of the entry
+  $rela=Torture::Utils::dnChild($leaf);
+
+    # Get a random parent
+  while(1) {
+    $parent=$self->parent($context);
+    return undef if(!$parent);
+    last if(!$self->{'track'}->exist($rela . ',' . $parent));
+  }
+
+  return ($leaf, $rela . ',' . $parent);
 }
 
 sub g_object_ok() {
@@ -76,7 +129,7 @@ sub g_object_ok() {
   return undef if(!$parent);
 
     # Create a random object under this non-existing child
-  return $self->object($context, $parent);
+  return ($self->object($context, $parent));
 }
 
 sub g_object_existing() {
@@ -84,22 +137,30 @@ sub g_object_existing() {
   my $context=shift;
 
   my $parent;
+  my $retval;
 
     # Choose a random parent
   $parent=$self->parent($context);
   return undef if(!$parent);
 
     # Try to fetch object and return it
-  return $self->{'track'}->get($parent);
+  $retval=$self->{'track'}->get($parent);
+  return ([$parent, @{$retval}]) if(@{$retval});
+
+  return undef;
 }
 
+
 my %generators = (
+  'dn/inserted/parent(dn/inserted/leaf)' => \&g_dn_inserted_leaf_node,
   'dn/invented' => \&g_dn_invented,
   'dn/inserted/brench' => \&g_dn_inserted_brench,
   'dn/inserted/leaf' => \&g_dn_inserted_leaf,
   'dn/deleted' => \&g_dn_deleted,
+  'dn/rootdn' => \&g_dn_root,
   'object/noparent' => \&g_object_noparent,
   'object/ok' => \&g_object_ok,
+  'object/new' => \&g_object_new,
   'object/existing' => \&g_object_existing
 );
 
@@ -127,10 +188,6 @@ sub new() {
   $self->{'track'} = $nodes;
   $self->{'generators'} = \%generators;
 
-
-  $self->{'bl_object'} = \%g_bl_object;
-  $self->{'bl_attributes'} = \%g_bl_attribute;
-
   while(my $key = shift) {
     my $value = shift;
     $self->{$key}=$value;
@@ -148,31 +205,21 @@ sub generate()  {
   my $what = shift;
 
   Check::Value($what);
-  print "generating $what\n";
   Check::Value($self->{'generators'}->{$what});
 
+  Torture::Debug::message('generator/making', join(':', caller()) . " generating $what\n");
   return &{$self->{'generators'}->{$what}}($self, $context);
 }
 
 sub g_random_objectclass($$) {
   my $self = shift;
-  return $self->class();
+  return ($self->class());
 }
 
 #  "1.3.6.1.4.1.1466.115.121.1.37" => 'objectclass',
 
 sub prepare($$) { 
   my $self = shift;
-  my $bl_object = shift;
-  my $bl_attributes = shift;
-
-    # Ok, initialize blacklists 
-  $bl_object = $bl_object || $self->{'bl_object'};
-  $bl_attributes = $bl_attributes || $self->{'bl_attributes'};
-
-    # Black list must be hash ref
-  Check::Hash($bl_object);
-  Check::Hash($bl_attributes);
 
     # Register locally handled attributes
   $self->{'attribhdlr'}->register('1.3.6.1.4.1.1466.115.121.1.37', 
@@ -199,8 +246,11 @@ sub parent() {
     # Ok, return rootdn (or undef), if there are no entries
     # we can use as parents 
   @known=$self->{'track'}->inserted();
-  return $rootdn if(!@known);
-  return $self->{'random'}->element($self->{'random'}->context($context), \@known); 
+  if(!@known) {
+    Torture::Debug::message('generator/parent/rootdn', 'returning rootdn instead of random entry');
+  }
+
+  return $self->{'random'}->element($self->{'random'}->context($context), [ $rootdn, @known ]); 
 }
 
 sub dn(@) {

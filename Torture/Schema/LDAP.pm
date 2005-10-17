@@ -9,6 +9,9 @@ use Data::Dumper;
 use Torture::Debug;
 use Check;
 
+my %g_bl_object = (
+        "1.3.6.1.4.1.4203.1.4.1" => '65: objectClass "1.3.6.1.4.1.4203.1.4.1" only allowed in the root DSE' );
+
 sub load_add_object($$$$) {
   my $self = shift;
   my $attributes = shift;
@@ -270,7 +273,7 @@ sub prepare($$) {
 
   $self->{'attribute-whitelist'}=$wl_attribute;
   $self->{'attribute-blacklist'}=$bl_attribute || {};
-  $self->{'object-blacklist'}=$bl_object || {};
+  $self->{'object-blacklist'}=$bl_object || \%g_bl_object;
 
     # Try to load schema templates
   $self->{'templates'}=$self->load_templates($self->{'schema'});

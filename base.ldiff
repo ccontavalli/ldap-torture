@@ -1,0 +1,7 @@
+dn: dc=test,dc=it
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: nodomain
+dc: test
+

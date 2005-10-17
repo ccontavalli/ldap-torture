@@ -8,6 +8,10 @@ use strict;
 package Torture::Operations;
 my $dir = 'Torture/Operations';
 
+our $ok = 0;
+our $impossible = 1;
+our $error = 2;
+
 sub new {
   my $self = {};
   my $name = shift;
@@ -49,36 +53,37 @@ sub perform() {
 
     # Ok, generate each and every of the required arguments 
   foreach my $arg (@{$operation->{'args'}}) {
-    my $value=$self->{'generator'}->generate($self->{'random'}->context($context, $operation->{'aka'}, $arg), $arg);
-    return undef if(!$value);
+    my @value=$self->{'generator'}->generate($self->{'random'}->context($context, $operation->{'aka'}, $arg), $arg);
+    Torture::Debug::message('operators/perform/args', "getting $arg -> " . ((@value && defined($value[0])) ? join(' ', @value) : '(undef)') . "\n");
+    return (wantarray ? ($impossible, "couldn't find any $arg") : $impossible) if(!@value || !defined($value[0]));
 
-    push(@args, $value);
+    push(@args, @value);
   }
 
     # Call function handler 
-  print "Function ".$operation->{'aka'}."\n";
+  Torture::Debug::message('operators/perform/function', 'function ' . $operation->{'aka'} . "\n");
   if(ref($operation->{'func'}) ne 'ARRAY') {
     $result=&{$operation->{'func'}}($self->{'main'}, $self->{'refe'}, @args);
   } elsif($#{$operation->{'func'}} < 1) {
-    print "function no args". $#{$operation->{'func'}} ."\n";
+    Torture::Debug::message('operators/perform/function', "function no args". $#{$operation->{'func'}} ."\n");
     $result=&{$operation->{'func'}->[0]}($self->{'main'}, $self->{'refe'}, @args);
   } else {
-    $result=&{$operation->{'func'}->[0]}($self->{'main'}, $self->{'refe'},
-    				@{$operation->{'func'}}[1 .. $#{$operation->{'func'}}], @args);
+    @args=(@{$operation->{'func'}}[1 .. $#{$operation->{'func'}}], @args);
+    $result=&{$operation->{'func'}->[0]}($self->{'main'}, $self->{'refe'}, @args);
   }
 
     # Call result handler
   if(ref($operation->{'res'}) ne 'ARRAY') {
-    $result=&{$operation->{'res'}}($self->{'main'}, $self->{'refe'}, $result, @args);
+    $result=&{$operation->{'res'}}($self->{'main'}, $self->{'refe'}, $result, \@args);
   } elsif($#{$operation->{'res'}} < 1) {
-    $result=&{$operation->{'res'}->[0]}($self->{'main'}, $self->{'refe'}, $result, @args);
+    $result=&{$operation->{'res'}->[0]}($self->{'main'}, $self->{'refe'}, $result, \@args);
   } else {
-    $result=&{$operation->{'res'}->[0]}($self->{'main'}, $self->{'refe'}, $result,
-    				@{$operation->{'res'}}[1 .. $#{$operation->{'res'}}], @args);
+    $result=&{$operation->{'res'}->[0]}($self->{'main'}, $self->{'refe'}, $result, \@args,
+    				@{$operation->{'res'}}[1 .. $#{$operation->{'res'}}]);
   }
 
     # Finally, return back to caller
-  return $result;
+  return ($result ? ($error, $operation->{'aka'} . ' - ' . $result . "\n" . Dumper(@args))  : ($ok, 'no error found'));
 }
 
 sub load {
@@ -118,56 +123,41 @@ sub known() {
 }
 
 sub action_server() {
-#  my $self=shift;
   my $main=shift;
   my $refe=shift;
   my $action=shift;
 
-  my $result=$main->$action(@{@_});
-  return [$result, @_]; 
-}
-#my $var = { 'var' => 'val' };
-#my $var = [ ];
-#my %var = ( );
-#my @var = ( );
-#
-#my $var = \%hash;
-#my $var = \@array;
-#$var{'variabile'}
-#$var->{'variabile'}
-#
-#$var[0]
-#$var->[0]
-#
-#${$var}{'variabile'}
-#${$var}[0]
+  Check::Class('Torture::Server', $main);
+  Check::Class('Torture::Server', $refe);
+  Check::Value($action);
 
-sub ldap_fail() {
-#  my $self=shift;
+  my $result=$main->$action(@_);
+  return $result;
+}
+
+sub ldap_code() {
   my $main=shift;
   my $refe=shift;
   my $result=shift;
+  my $args=shift;
+  my $action;
+ 
+  Check::Class('Torture::Server', $main);
+  Check::Class('Torture::Server', $refe);
+  Check::Value($result);
 
-  foreach my $err_expect (shift) {
-    if(${$result}[0]->code==$err_expect) {
-    #if(0==$err_expect) {
+  foreach my $err_expect (@_) {
+    if($result->code == $err_expect) {
+      if($result->code == 0) {
+        $action=${$args}[0];
+        $refe->$action(@{$args}[1 .. $#{$args}]);
+      }
+
       return undef;
     }
   }
-  return (${$result}[0]->code ? ${$result}[0]->code ." ". ${$result}[0]->error : ${$result}[0]->code." Operation Success");
-}
 
-sub ldap_succeed() {
-#  my $self=shift;
-  my $main=shift;
-  my $refe=shift;
-  my $result=shift;
-  
-  return ${$result}[0]->code ." ". ${$result}[0]->error if(${$result}[0]->code);
-  
-  print "operation ".${$result}[1][0]."\n";
-  #$refe->${$result}[1][0](1 .. @{${$result}[1]});
-  return undef;
+  return ($result->code ? $result->code . ' ' . $result->error : $result->code . ' Success');
 }
 
 1;

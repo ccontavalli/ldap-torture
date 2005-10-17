@@ -10,7 +10,7 @@ sub new(@) {
   my $name = shift;
   my $self = {};
 
-  $self->{'rootdns'} = \@_ ;
+  $self->{'rootdns'} = @_;
   $self->{'nodes'} = {};
   $self->{'leaves'} = {};
   $self->{'branches'} = {};
@@ -21,10 +21,19 @@ sub new(@) {
 }
 
 
+sub roots() {
+  my $self=shift;
+  return @{$self->{'rootdns'}};
+}
+
 sub add() {
   my $self = shift;
-  my $dn = shift;
-  my @args = @_;
+  my $array = shift;
+
+  Check::Array($array);
+
+  my $dn=${$array}[0];
+  my @args = @{$array}[1 .. $#{$array}];
 
   Check::Value($dn);
 
@@ -33,15 +42,14 @@ sub add() {
     # If this object was previously removed,
     # now it's there again...
   delete($self->{'deleted'}->{$dn});
-
-    # Ok, remember the dn was inserted
   $self->{'nodes'}->{$dn}++;
-  $self->{'leaves'}->{$dn}++;
 
     # Try to stay on the safe side avoid adding any
     # rootdn parent on the branches tree
-  return if(!$parent || grep(/,$parent$/, @{$self->{'rootdns'}}));
+  return if(!$parent || grep(/(^$parent$|,$parent$)/, @{$self->{'rootdns'}}));
 
+    # Ok, remember the dn was inserted
+  $self->{'leaves'}->{$dn}++;
     # Ok, remember parent now has one more children
   $self->{'nodes'}->{$parent}++;
   delete($self->{'leaves'}->{$parent});
@@ -70,6 +78,7 @@ sub delete() {
     # Look for parent node
   my $parent = Torture::Utils::dnParent($dn);
   return if(!$parent || !$self->{'nodes'}->{$parent});
+  return if(grep(/(^$parent$|,$parent$)/, @{$self->{'rootdns'}}));
 
     # Now, tell parent he has one less 
     # children
@@ -103,7 +112,7 @@ sub move(@) {
     # Now, just update references, without
     # caring about reentrancy
   $self->Torture::Tracker::delete($old);
-  $self->Torture::Tracker::add($new);
+  $self->Torture::Tracker::add([$new]);
 
   return;
 }
@@ -125,9 +134,18 @@ sub copy(@) {
 
     # Now, just update references, without
     # caring about reentrancy
-  $self->Torture::Tracker::add($new);
+  $self->Torture::Tracker::add([$new]);
 
   return;
+}
+
+sub exist() {
+  my $self = shift;
+  my $value = shift;
+
+  Check::Value($value);
+
+  return $self->{'nodes'}->{$value};
 }
 
 sub inserted() {

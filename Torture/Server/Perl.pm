@@ -25,7 +25,7 @@ sub new() {
     $self->{'parent2child'}->{$rootdn}=();
     $self->{'childdata'}->{$rootdn}=[];
 
-    $self->SUPER::add($rootdn);
+    $self->SUPER::add([$rootdn]);
   }
 
   bless($self, $class);
@@ -94,18 +94,22 @@ sub delete(@) {
 
 sub add(@) {
   my $self=shift;
-  my $dn=shift;
-  my @args = @_;
+  my $array=shift;
+
+  Check::Array($array);
+
+  my $dn=${$array}[0];
+  my @args = @{$array}[1 .. $#{$array}];
 
   Check::Value($dn);
 
     # Get name of current parent
   my $parent = Torture::Utils::dnParent($dn);
-  Check::Value($dn);
+  Check::Value($parent);
 
     # Ok, give a chance to tracker to 
     # update its own references
-  $self->SUPER::add($dn, @_);
+  $self->SUPER::add($array);
 
     # Now, add node...
   push(@{$self->{'parent2child'}->{$parent}}, $dn);

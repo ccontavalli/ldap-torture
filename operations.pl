@@ -388,6 +388,7 @@ my %operations = (
 	'deleteleaf' => \&op_deleteleaf,
 	'deletenonexisting' => \&op_deletenonexisting,
 ## 	'deletebrench' => \&op_deletebrench,
+
 ## 	'moveleaf' => \&op_moveleaf,
  	'renameleaf' => \&op_renameleaf,
  	'moverenameleaf' => \&op_moverenameleaf,

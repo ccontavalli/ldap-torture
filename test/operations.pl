@@ -24,7 +24,7 @@ my $attrib=Torture::Random::Attributes->new($random);	  # Contains attributes we
   # perl fucntion. This class hinerits from Torture::Tracker, which
   # means it is able to track data and to provide objects for the
   # complex generator
-my $tnodes=Torture::Server::Perl->new("dc=masobit,dc=net");	  # Reference server to be used, with tracking abilities
+my $tnodes=Torture::Server::Perl->new("dc=test,dc=it");	  # Reference server to be used, with tracking abilities
 
   # The real LDAP generator. It generates complex object
   # classes and data types.
@@ -39,4 +39,4 @@ my $operations=Torture::Operations->new($random, $generator, $server, $tnodes);
 
 my $killer=Torture::Killer->new($random, $operations);
 
-$killer->start(undef, 10)
+$killer->start(undef, 10000)

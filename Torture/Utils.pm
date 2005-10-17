@@ -25,7 +25,12 @@ sub dnRelative($) {
 
 sub dnParent($) {
   my $dn=shift;
-  return ($dn =~ (/(\\,|[^,]*)*[^\\],(.*)/))[1]
+  return ($dn =~ (/(\\,|[^,]*)*[^\\][,](.*)$/))[1];
+}
+
+sub dnChild($) {
+  my $dn=shift;
+  return ($dn =~ (/((\\,|[^,]*)*[^\\])[,]/))[0];
 }
 
 sub objectscheck() {

@@ -12,7 +12,16 @@ my %errors = (
 	'schema/index' => 0,
 	'schema/syntax'=> 0,
 	'schema/dump/attributes' => 0,
-	'schema/dump/objects' => 0 
+	'schema/dump/objects' => 0,
+	'generator/making' => 0,
+	'generator/parent/rootdn' => 0,
+	'operators/perform/function' => 0,
+	'operators/perform/result' => 0,
+	'operators/perform/args' => 0,
+	'LDAP/add' => 0,
+	'LDAP/delete' => 0,
+	'LDAP/move' => 0,
+	'LDAP/rename' => 0
 );
 
 sub message($$) {

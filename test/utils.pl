@@ -11,4 +11,6 @@ print 'dnstronzo: ' . $dnstronzo . ' -- parent: ' . Torture::Utils::dnParent($dn
 print 'escaping: ' . $value . ' -- escaped: ' . Torture::Utils::attribEscape($value) . "\n";
 print 'relative: ' . $dn . ' - ' . Torture::Utils::dnRelative($dn) . ' -- relative (stronzo): ' . 
 	$value . ' - ' . Torture::Utils::dnRelative(Torture::Utils::attribEscape($value)) . "\n";
+print 'child: ' . $dn . ' - ' . Torture::Utils::dnChild($dn) . "\n";
+print 'childstronzo: ' . $dnstronzo . ' - ' . Torture::Utils::dnChild($dnstronzo) . "\n";
 
