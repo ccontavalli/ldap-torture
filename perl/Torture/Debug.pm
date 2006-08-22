@@ -6,7 +6,7 @@ use strict;
 
 my %errors = (
 	'schema/object' => 0,
-	'schema/attributes' => 0,
+	'schema/attributes' => 0, 
 	'schema/attribute' => 0,
 	'schema/warning' => 0,
 	'schema/index' => 0,

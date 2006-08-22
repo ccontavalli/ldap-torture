@@ -45,14 +45,6 @@ sub g_dn_inserted() {
   return ($self->{'random'}->element($context, [$self->{'track'}->branches(), $self->{'track'}->leaves()]));
 }
 
-sub g_dn_inserted_leaf() {
-  my $self=shift;
-  my $context=shift;
-
-  my $obj=$self->{'random'}->element($context, [$self->{'track'}->leaves()]);
-
-  return ($obj ? ($obj) : undef);
-}
 sub g_dn_root() {
   my $self=shift;
   my $context=shift;
@@ -102,7 +94,7 @@ sub g_object_new() {
   return undef if(!$parent);
 
     # Create a random object under this non-existing child
-  for(my $i=0; $i < $self->{'config'}->{'gen_attempts'}; $i++) {
+  for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
     $object=$self->object($context, $parent);
     return undef if(!$object);
 
@@ -123,11 +115,11 @@ sub g_dn_inserted_leaf_node() {
   $rela=Torture::Utils::dnChild($leaf);
 
     # Get a random parent
-  for(my $i=0; $i < $self->{'config'}->{'gen_attempts'}; $i++) {
+  for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
     $parent=$self->parent($context);
     return undef if(!$parent);
     return ($leaf, $rela . ',' . $parent) 
-	    if(!$self->{'track'}->exist($rela . ',' . $parent));
+	    if(!$self->{'track'}->exist($rela . ',' . $parent) && $parent ne $leaf);
   }
 
   return undef;
@@ -281,7 +273,7 @@ sub dn(@) {
   $self->prepare() if(!$self->{'prepared'});
   $attrib=$self->{'random'}->element($self->{'random'}->context($context, 'type'), [keys(%{$self->{'attributes'}})]) if(!$oattrib);
 
-  for(my $i=0; $i < $self->{'config'}->{'gen_attempts'}; $i++) {
+  for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
     my $generated = $self->{'attribhdlr'}->generate($self->{'random'}->context($context, 'value'), $self->{'attributes'}->{$attrib});
     $retval = $attrib . '=' . Torture::Utils::attribEscape($generated) . ($parent ? ',' . $parent : '');
 

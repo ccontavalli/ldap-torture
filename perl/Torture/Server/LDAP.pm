@@ -51,12 +51,12 @@ sub new() {
   RBC::Check::Hash($config);
 
   my ($rootdn, $server, $binddn) = 
-	  ($config->{'ldap_rootdn'}, $config->{'ldap_server'}, $config->{'ldap_binddn'});
+	  ($config->{'ldap-rootdn'}, $config->{'ldap-server'}, $config->{'ldap-binddn'});
 
   my ($options, $bindauth);
 
-  $options=[split(/\s+/, $config->{'ldap_options'})] if($config->{'ldap_options'});
-  $bindauth=[split(/\s+/, $config->{'ldap_bindauth'})] if($config->{'ldap_bindauth'});
+  $options=[split(/\s+/, $config->{'ldap-options'})] if($config->{'ldap-options'});
+  $bindauth=[split(/\s+/, $config->{'ldap-bindauth'})] if($config->{'ldap-bindauth'});
 	  
   my $connection;
  

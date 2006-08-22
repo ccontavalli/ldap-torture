@@ -1,0 +1,52 @@
+$VAR2 = 'add';
+$VAR3 = [
+          'olcDitContentRules=7lfnm,dc=test,dc=it',
+          'attr',
+          [
+            'olcDitContentRules',
+            '7lfnm',
+            'olcAttributeTypes',
+            'Gg5',
+            'olcObjectIdentifier',
+            'kn3LiKa63m3fqx',
+            'cn',
+            'dZ7zeuN4Nm3Ogvvy',
+            'olcObjectClasses',
+            'Js7knbXU2RcLhKXX',
+            'objectclass',
+            [
+              'olcSchemaConfig'
+            ]
+          ]
+        ];
+$VAR2 = 'add';
+$VAR3 = [
+          'olcInclude=HDIuF97,olcDitContentRules=7lfnm,dc=test,dc=it',
+          'attr',
+          [
+            'olcInclude',
+            'HDIuF97',
+            'olcRootDSE',
+            'gX5ZS6T0wqqcKF79IZtQoid0hwFgW',
+            'objectclass',
+            [
+              'olcIncludeFile'
+            ]
+          ]
+        ];
+$VAR2 = 'add';
+$VAR3 = [
+          'olcBackend=SbxFi6ivcdONiqgC5j4L8,olcInclude=HDIuF97,olcDitContentRules=7lfnm,dc=test,dc=it',
+          'attr',
+          [
+            'olcBackend',
+            'SbxFi6ivcdONiqgC5j4L8',
+            'objectclass',
+            [
+              'olcBackendConfig'
+            ]
+          ]
+        ];
+$VAR2 = 'move';
+$VAR3 = 'olcDitContentRules=7lfnm,dc=test,dc=it';
+$VAR4 = 'olcDitContentRules=7lfnm,nisMapName=jklzAAuUOYt38g,dc=test,dc=it';

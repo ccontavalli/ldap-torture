@@ -4,9 +4,71 @@ package RBC::Parse;
 
 use RBC::Check;
 use File::Basename;
+use Getopt::Long;
+
 use strict;
 
 our @INC;
+
+sub NewCmdLine($$;$) {
+  my $config = shift;
+  my $format = shift;
+  my $args = shift;
+  my @retval;
+
+  RBC::Check::Hash($config);
+  RBC::Check::Array($format);
+  RBC::Check::Array($args) if($args);
+
+  my $getopt = new Getopt::Long::Parser;
+  $getopt->configure('bundling_override', 'require_order', 'no_ignore_case', 'pass_through');
+  if($args) {
+    local @ARGV = @{$args};
+    $getopt->getoptions($config, @{$format});
+    @retval=@ARGV;
+  } else {
+    $getopt->getoptions($config, @{$format});
+    @retval=@ARGV;
+  }
+
+  return @retval;
+}
+
+sub NewCfg($$$$;@) {
+    # hash similar to c => command, h => help ...
+  my $cl_format = shift;
+    # hash defining parameters expected in configuration file
+  my $fc_config = shift;
+    # string defining name of var containing conf file
+  my $fc_param = shift;
+    # default name of the fie
+  my $fc_name = shift;
+    # where to put read configurations...
+  my $config = shift;
+
+  RBC::Check::Array($cl_format);
+  RBC::Check::Value($fc_param);
+  RBC::Check::Hash($config);
+
+  my $getopt = new Getopt::Long::Parser;
+  my $cfg_cmdline = {};
+  $getopt->configure('bundling_override', 'require_order', 'no_ignore_case', 'pass_through');
+  $getopt->getoptions($cfg_cmdline, @{$cl_format});
+
+    # Now, we might:
+    #   - have the name of the configuration 
+    #     file supplied from the command line 
+  my $cfg_preandcmd = { %{$config}, %{$cfg_cmdline} };
+  my $cfg_file = {};
+  if($cfg_preandcmd->{$fc_param}) {
+    CfgFile(undef, $cfg_file, $cfg_preandcmd->{$fc_param});
+  } else {
+    $cfg_file->{$fc_param}=(CfgPaths(undef, $cfg_file, $fc_name, @_))[0];
+  }
+
+  %{$config} = (%{$config}, %{$cfg_file}, %{$cfg_cmdline});
+  return @ARGV;
+}
 
 sub Cfg($$$$;@) {
     # hash similar to c => command, h => help ...
@@ -98,6 +160,7 @@ sub CfgFile($$@) {
         # Replace variables
       $value =~ s/\$([A-z0-9_]+)/$config->{$1}/eg;
       $value =~ s/\$\{([A-z0-9_]+)\}/$config->{$1}/eg;
+      $var =~ s/_/-/g;
 
         # Finally, store variable
       eval { $config->{$var}=$value; };

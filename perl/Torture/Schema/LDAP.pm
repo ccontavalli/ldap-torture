@@ -94,6 +94,11 @@ sub load_add_attribute($$$$) {
     Torture::Debug::message('schema/attributes', "(syntax)");
     return undef;
   }
+  if(!$attr->{'equality'}) {
+    Torture::Debug::message('schema/attributes', "(no-equality)");
+    return undef;
+  }
+
   Torture::Debug::message('schema/syntax', "$name -- " . $attr->{'syntax'} . "\n");
   if($self->{'attribute-whitelist'}->{$attr->{'syntax'}}) {
     $result->{$name} = $attr->{'syntax'};

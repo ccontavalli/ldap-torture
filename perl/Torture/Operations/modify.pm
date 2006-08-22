@@ -5,7 +5,7 @@ use Data::Dumper;
 use RBC::Check;
 use strict;
 
-package Torture::Operations::insert;
+package Torture::Operations::modify;
 
 # missing:
 #  modify/add/multi/one/ok
@@ -47,11 +47,11 @@ package Torture::Operations::insert;
 #  modify/multiple/fail
 
 my $operations = [ 
-  { aka => 'modify/delete/ok/attr/valid/missing',
-    name => 'remove a non-existing attribute from an object',
-    func => [ \&Torture::Operations::action_server, 'modify' ],
-    args => [ 'dn/inserted', 'dn/attribute/non-set' ],
-    res => [ \&Torture::Operations::ldap_code, 0 ]}, 
+#  { aka => 'modify/delete/ok/attr/valid/missing',
+#    name => 'remove a non-existing attribute from an object',
+#    func => [ \&Torture::Operations::action_server, 'modify' ],
+#    args => [ 'dn/inserted', 'dn/attribute/non-set' ],
+#    res => [ \&Torture::Operations::ldap_code, 0 ]}, 
 ];
 
 sub init() { return $operations; }

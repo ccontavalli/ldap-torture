@@ -34,9 +34,13 @@ sub new {
   $self->{'main'} = $main;
   $self->{'refe'} = $refe;
   $self->{'config'} = $config;
+  $self->{'stats'}=0;
+  $Data::Dumper::Indent=$config->{'op-dumpstyle'} || 0;
+  $Data::Dumper::Purity=1;
+  $Data::Dumper::Terse=1;
 
   bless($self);
-  while(<$dir/*>) {
+  while(<$dir/*.pm>) {
     $self->load($_);
   }
 
@@ -67,15 +71,18 @@ sub perform() {
     # Call function handler 
   Torture::Debug::message('operators/perform/function', 'function ' . $operation->{'aka'} . "\n");
   if(ref($operation->{'func'}) ne 'ARRAY') {
-    print $operation->{'aka'} . ' - ' . "@args\n" if($self->{'config'}->{'op_verbose'});
+    print $operation->{'aka'} . ' - ' . "@args\n" if($self->{'config'}->{'op-verbose'});
+    print 'op' . sprintf('%06d', $self->{'stats'}) . '=' . Dumper([$operation->{'aka'}, @args]) . "\n" if($self->{'config'}->{'op-dump'});
     $result=&{$operation->{'func'}}($self->{'main'}, $self->{'refe'}, @args);
   } elsif($#{$operation->{'func'}} < 1) {
     Torture::Debug::message('operators/perform/function', "function no args". $#{$operation->{'func'}} ."\n");
-    print $operation->{'aka'} . ' - ' . "@args\n" if($self->{'config'}->{'op_verbose'});
+    print $operation->{'aka'} . ' - ' . "@args\n" if($self->{'config'}->{'op-verbose'});
+    print 'op' . sprintf('%06d', $self->{'stats'}) . '=' . Dumper([$operation->{'aka'}, @args]) . "\n" if($self->{'config'}->{'op-dump'});
     $result=&{$operation->{'func'}->[0]}($self->{'main'}, $self->{'refe'}, @args);
   } else {
     @args=(@{$operation->{'func'}}[1 .. $#{$operation->{'func'}}], @args);
-    print $operation->{'aka'} . ' - ' . "@args\n" if($self->{'config'}->{'op_verbose'});
+    print $operation->{'aka'} . ' - ' . "@args\n" if($self->{'config'}->{'op-verbose'});
+    print 'op' . sprintf('%06d', $self->{'stats'}) . '=' . Dumper([$operation->{'aka'}, @args]) . "\n" if($self->{'config'}->{'op-dump'});
     $result=&{$operation->{'func'}->[0]}($self->{'main'}, $self->{'refe'}, @args);
   }
 
@@ -90,8 +97,9 @@ sub perform() {
   }
 
     # Finally, return back to caller
+  $self->{'stats'}++;
   $operation->{'stats'}++;
-  return ($result ? ($error, $operation->{'aka'} . ' - ' . $result . "\n" . Dumper(@args))  : ($ok, 'no error found'));
+  return ($result ? ($error, $operation->{'aka'} . ' - ' . $result . "\nfailed=" . Dumper(\@args))  : ($ok, 'no error found'));
 }
 
 sub load {

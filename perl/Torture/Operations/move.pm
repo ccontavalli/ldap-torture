@@ -8,13 +8,11 @@ use strict;
 package Torture::Operations::move;
 
 #  -> move, moves under another parent
-#	-> conserving same name
-#	-> conserving same attribute as dn
-
 #  'move/leaf/ok'
 #  'move/leaf/tononexisting'
 #  'move/leaf/nonexisting'
 #  'move/leaf/changingattribute'
+#  'move/leaf/self'
 
 ###  'move/leaf/toexisting'
 

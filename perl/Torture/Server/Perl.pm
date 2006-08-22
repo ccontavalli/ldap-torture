@@ -19,13 +19,13 @@ sub new() {
   my $self=$class->SUPER::new(@_);
 
   RBC::Check::Hash($config);
-  RBC::Check::Value($config->{'perl_rootdn'});
+  RBC::Check::Value($config->{'perl-rootdn'});
 
   $self->{'parent2child'} = {};
   $self->{'childdata'} = {};
   $self->{'rootdns'} = ();
 
-  foreach my $rootdn (split(/\s+/, $config->{'perl_rootdn'})) {
+  foreach my $rootdn (split(/\s+/, $config->{'perl-rootdn'})) {
     push(@{$self->{'rootdns'}}, $rootdn);
     $self->{'parent2child'}->{$rootdn}=();
     $self->{'childdata'}->{$rootdn}=[];
