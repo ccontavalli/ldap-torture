@@ -1,0 +1,43 @@
+#!/bin/dash
+
+  # Useless variables ... the lines below can be safely
+  # commendted out, as long as the proper parameters are defined 
+lt_filename=`which "$0"`
+lt_filename=`readlink -f "$lt_filename"`
+lt_dirname=`dirname "$lt_filename"`
+
+#######>>>>>>>>>>>> READ HERE --V--
+  # If you saw an error like 'please edit the scrit', define
+  # the variable below... this should be set to the path where
+  # the tarball containing ldap-torture was decompressed. You
+  # should also comment out the 3 variables above 
+  # (lt_filename, lt_dirname).
+lt_root=${lt_root-`cd $lt_dirname 2>/dev/null && cd .. 2>/dev/null && pwd 2>/dev/null`}
+#lt_root='/opt/ldap-torture/'
+
+set -e
+test -d "$lt_root/" || {
+  echo "couldn't find root directory.. sorry.." 1>&2
+  echo "please edit the script to explicitly declare the name" 1>&2
+  echo "of the directories being used..." 1>&2
+  exit 1
+}
+
+test -r "$lt_root/conf/torturer.conf" || {
+  echo "missing configuration file -- are you running the script from the right directory?" 1>&2
+  echo "(looking for '$lt_root/conf/torturer.conf')" 1>&2
+  exit 1
+}
+
+  # Include configuration file
+. "$lt_root/conf/torturer.conf"
+
+test -n "$rootdn" || {
+  echo "missing parameter rootdn in configuration file" 1>&2
+  echo "(file: $lt_root/conf/torturer.conf)" 1>&2
+  exit 2
+}
+
+$slapcat -b "$rootdn" 
+
+# vi:set ft=sh:

@@ -1,0 +1,11 @@
+compare -> man ldap_compare
+modify -> 
+search -> 
+
+- references
+- referrals 
+- acls
+- aliases
+- ldap options
+- overlays
+- sync options

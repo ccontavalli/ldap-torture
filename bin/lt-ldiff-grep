@@ -1,0 +1,69 @@
+#!/usr/bin/perl -w
+# use mb-ldiff-grep -h to obtain help
+
+# Copyright (C) 2005,2006 Carlo Contavalli 
+
+use strict;
+use File::Basename;
+
+my $buffer;
+my @object;
+
+my ($o_invert, $o_pattern, $o_quiet)=(0, undef, undef);
+my @o_files;
+while(my $opt=shift(@ARGV)) {
+  if($opt =~ /-v/) { 
+    $o_invert=1; 
+  } elsif($opt =~ /-q|--quiet/) { 
+    $o_quiet=1;
+  } elsif($opt =~ /-h|--help/) { 
+    print 'Usage: ' . basename($0) . ' [OPTIONS] PATTERN [FILE...]' . "\n" . '  - prints ldiff object matching pattern' . "\n";
+    print 'Usage: ' . basename($0) . "\n" . '  - join ldiff lines that start with a " " with the previous lines' . "\n";
+    print "\n" . 'Options:' . "\n" . '  -v - invert pattern - prints ldiff lines _not_ matching pattern' . "\n";
+    print '  -h --help - print this help screen' . "\n";
+    print '  -q --quiet - be quiet, suppress error messages' . "\n";
+    print "\n" . 'Return values:' . "\n" . '  0 - the pattern was matched, and something outputted' . "\n";
+    print '  1 - the pattern was never matched, and nothing outputted' . "\n";
+    exit(0);
+  } elsif($opt =~ /.*/ && !$o_pattern) { 
+    $o_pattern=$opt; 
+  } else { 
+    push(@o_files, $opt); 
+  }
+}
+
+push(@o_files, '-') if(!@o_files);
+foreach my $file (@o_files) {
+  my $fd;
+ 
+    # Try to open file, in case of error,
+    # skip to the next one...
+  if(!open($fd, "<$file")) {
+    print STDERR "couldn't open file: $file ($!)\n" if(!$o_quiet);
+    next;
+  }
+
+  while(<$fd>) {
+    chomp();
+  
+    if(/^\s(.*)/) {
+      $buffer .= $1;
+      next;
+    }
+  
+    if(defined($buffer)) {
+      push(@object, $buffer . "\n");
+      if($buffer eq "") {
+        print (@object) if(!$o_pattern || 
+			   (!$o_invert && grep(/$o_pattern/, @object)) ||
+			   ($o_invert && !grep(/$o_pattern/, @object)));
+        @object=();
+      }
+    }
+  
+    $buffer=$_;
+  }
+  
+  push(@object, $buffer . "\n") if(defined($buffer));
+  close($fd);
+}
