@@ -47,7 +47,7 @@ sub start() {
   print "===================\n";
   print ((($status[0] != $Torture::Operations::ok) ? ($status[0] . ':' . $status[1]) : 'all operations performed') . "\n");
 
-  return;
+  return ($status[0] != $Torture::Operations::ok) ? 1 : 0;
 }
 
 1;
