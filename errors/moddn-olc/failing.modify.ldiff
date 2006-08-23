@@ -1,0 +1,5 @@
+dn: olcModuleLoad=kvFQPFTF2yTT5zmFNlC,dc=test,dc=it
+changetype: moddn
+newrdn: olcModuleLoad=kvFQPFTF2yTT5zmFNlC
+deleteoldrdn: 1
+newsuperior: cn=avW4TP,dc=test,dc=it

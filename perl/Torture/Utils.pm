@@ -2,6 +2,8 @@
 #
 
 package Torture::Utils;
+
+use RBC::Check;
 use strict;
 
 sub attribEscape($) {
@@ -23,13 +25,29 @@ sub dnRelative($) {
   return !scalar($dn =~ /[^\\],/);
 }
 
+sub dnAttrib($) {
+  my $dn = shift;
+  RBC::Check::Value($dn);
+  $dn=~/([^=]*)=/;
+  return $1;
+}
+
+sub dnValue($) {
+  my $dn = shift;
+  RBC::Check::Value($dn);
+  $dn=~/([^=]*)=(.*)/;
+  return $2;
+}
+
 sub dnParent($) {
   my $dn=shift;
+  RBC::Check::Value($dn);
   return ($dn =~ (/(\\,|[^,]*)*[^\\][,](.*)$/))[1];
 }
 
 sub dnChild($) {
   my $dn=shift;
+  RBC::Check::Value($dn);
   return ($dn =~ (/((\\,|[^,]*)*[^\\])[,]/))[0];
 }
 

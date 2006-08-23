@@ -1,0 +1,39 @@
+dn: dc=test,dc=it
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: nodomain
+dc: test
+structuralObjectClass: organization
+entryUUID: 10d5367e-c6c4-102a-8604-5d7a7c90d75b
+creatorsName:
+modifiersName:
+createTimestamp: 20060823072349Z
+modifyTimestamp: 20060823072349Z
+entryCSN: 20060823072349Z#000000#00#000000
+
+dn: cn=avW4TP,dc=test,dc=it
+cn: avW4TP
+ipServicePort: 3299579525
+ipServiceProtocol: nzFmzajrDc0WoNsYA3CsK22MLF
+description: iEqkFYqYfh4x87i2MxfqK6
+objectClass: ipService
+structuralObjectClass: ipService
+entryUUID: 1d103aa6-c6c4-102a-82ac-89db3dd68896
+creatorsName:
+createTimestamp: 20060823072410Z
+entryCSN: 20060823072410Z#000000#00#000000
+modifiersName:
+modifyTimestamp: 20060823072410Z
+
+dn: olcModuleLoad=kvFQPFTF2yTT5zmFNlC,dc=test,dc=it
+olcModuleLoad: kvFQPFTF2yTT5zmFNlC
+objectClass: olcModuleList
+structuralObjectClass: olcModuleList
+entryUUID: 1d111c96-c6c4-102a-82ad-89db3dd68896
+creatorsName:
+createTimestamp: 20060823072410Z
+entryCSN: 20060823072410Z#000001#00#000000
+modifiersName:
+modifyTimestamp: 20060823072410Z
+

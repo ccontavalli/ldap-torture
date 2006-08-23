@@ -1,0 +1,5 @@
+dn: ou=argh,dc=test,dc=it
+changetype: moddn
+newrdn: ou=argh
+deleteoldrdn: 1
+newsuperior: cn=avW4TP,dc=test,dc=it

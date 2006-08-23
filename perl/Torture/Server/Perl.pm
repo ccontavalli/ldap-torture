@@ -161,7 +161,8 @@ sub copy(@) {
     $self->SUPER::copy($child, $child_new);
 
       # Ok, data of children must now be indexed under new name
-    $self->{'childdata'}->{$child_new}=$self->{'childdata'}->{$child};
+#    $self->{'childdata'}->{$child_new}=$self->{'childdata'}->{$child};
+    $self->{'childdata'}->{$child_new}=$self->replaceattr($child, $child_new, $self->{'childdata'}->{$child});
 
       # If the children we are renaming is a leaf (eg, has no children), we are done
     if(!defined($self->{'parent2child'}->{$child}) || !@{$self->{'parent2child'}->{$child}}) {
@@ -188,6 +189,38 @@ sub copy(@) {
   push(@{$self->{'parent2child'}->{$parent_new}}, $new);
   return;
 }
+
+#    $self->{'childdata'}->{$child_new}=$self->replaceattr($child, $child_new, $self->{'childdata'}->{$child});
+sub replaceattr($$$) {
+  my $self = shift;
+  my $old = shift;
+  my $new = shift;
+  my $data = shift;
+
+  RBC::Check::Value($old);
+  RBC::Check::Value($new);
+  RBC::Check::Array($data);
+
+  $new=Torture::Utils::dnChild($new);
+  my $attr=Torture::Utils::dnAttrib($new);
+  my $value=Torture::Utils::dnValue($new); 
+
+  my @result;
+  my @array=@{${$data}[1]};
+  while($_=shift(@array)) {
+    if($_ =~ /^\Q$attr\E$/) {
+      push(@result, $attr);
+      push(@result, $value);
+      shift(@array);
+      next;
+    }
+    push(@result, $_);
+    push(@result, shift(@array));
+  }
+
+  return ['attr', \@result ];
+}
+
 
 sub move(@) {
   my $self=shift;
@@ -226,7 +259,9 @@ sub move(@) {
     $self->SUPER::move($child, $child_new);
 
       # Ok, data of children must now be indexed under new name
-    $self->{'childdata'}->{$child_new}=$self->{'childdata'}->{$child};
+    $self->{'childdata'}->{$child_new}=$self->replaceattr($child, $child_new, $self->{'childdata'}->{$child});
+# ... rename attributes of the children!!!
+#print '---' . Data::Dumper::Dumper($child, $child_new, $self->{'childdata'}->{$child_new}) . "\n";
     delete($self->{'childdata'}->{$child});
 
       # If the children we are renaming is a leaf (eg, has no children), we are done
@@ -260,6 +295,13 @@ sub move(@) {
 
   push(@{$self->{'parent2child'}->{$parent_new}}, $new);
   return;
+}
+
+sub children() {
+  my $self=shift;
+  my $node=shift;
+
+  return $self->{'parent2child'}->{$node} ? @{$self->{'parent2child'}->{$node}} : undef;
 }
 
 1;

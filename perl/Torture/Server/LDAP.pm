@@ -134,7 +134,6 @@ sub copy() {
 
     # Now, if this is just a rename...
   if(!$nparent || $nparent eq $oparent) {
-    print "rename! $old, $nchild\n";
     Torture::Debug::message('LDAP/rename', 'rename ' . $old . ' ' . $nchild);
     return $self->{'ldap'}->moddn($old, 'newrdn' => $nchild, @_);
   }

@@ -7,14 +7,8 @@ use strict;
 
 package Torture::Operations::move;
 
-#  -> move, moves under another parent
-#  'move/leaf/ok'
-#  'move/leaf/tononexisting'
-#  'move/leaf/nonexisting'
-#  'move/leaf/changingattribute'
-#  'move/leaf/self'
 
-###  'move/leaf/toexisting'
+#  'move/leaf/changingattribute'
 
 sub move_leaf_ok() {
   my $main = shift;
@@ -38,11 +32,42 @@ sub move_leaf_ok() {
 }
 
 my $operations = [ 
-  { aka => 'move/leaf/ok',
-    name => 'move a random object under another parent -- which could be itself, without changing the rdn',
+  { aka => 'move/ok',
+    name => 'move a random object under another parent, without changing the rdn',
     func => [ \&Torture::Operations::action_server, 'move' ],
-    args => [ 'dn/inserted/parent(dn/inserted/leaf)' ],
+    args => [ 'dn/inserted', 'dn/alias/ok' ],
     res => [ \&move_leaf_ok ]}, 
+
+  { aka => 'move/descendant',
+    name => 'move a random object under one of its children (or itself), without changing the rdn',
+    func => [ \&Torture::Operations::action_server, 'move' ],
+    args => [ 'dn/inserted', 'dn/alias/descendant' ],
+    res => [ \&Torture::Operations::ldap_code, 32]}, 
+
+  { aka => 'move/tononexisting',
+    name => 'move a random object under a non-existing parent, without changing the rdn',
+    func => [ \&Torture::Operations::action_server, 'move' ],
+    args => [ 'dn/inserted', 'dn/alias/noparent' ],
+    res => [ \&Torture::Operations::ldap_code, 32]}, 
+
+  { aka => 'move/nonexisting',
+    name => 'move a non-existing object under another name',
+    func => [ \&Torture::Operations::action_server, 'move' ],
+    args => [ 'dn/nonexisting', 'dn/alias/ok' ],
+    res => [ \&Torture::Operations::ldap_code, 32]}, 
+
+  { aka => 'rename/ok',
+    name => 'changes name of an object under another name',
+    func => [ \&Torture::Operations::action_server, 'move' ],
+    args => [ 'dn/inserted', 'dn/alias/sameparent/ok' ],
+    res => [ \&move_leaf_ok ]}, 
+
+  { aka => 'rename/attribute/ok',
+    name => 'changes name of an object under another name',
+    func => [ \&Torture::Operations::action_server, 'move' ],
+    args => [ 'dn/inserted', 'dn/attralias/sameparent/ok' ],
+    res => [ \&move_leaf_ok ]}, 
+
 ];
 
 

@@ -15,7 +15,6 @@ lt_dirname=`dirname "$lt_filename"`
 lt_root=${lt_root-`cd $lt_dirname 2>/dev/null && cd .. 2>/dev/null && pwd 2>/dev/null`}
 #lt_root='/opt/ldap-torture/'
 
-set -e
 test -d "$lt_root/" || {
   echo "couldn't find root directory.. sorry.." 1>&2
   echo "please edit the script to explicitly declare the name" 1>&2

@@ -1,0 +1,4 @@
+$op{234}=['insert/new','add',['cn=avW4TP,dc=test,dc=it','attr',['cn','avW4TP','ipServicePort',3299579525,'ipServiceProtocol','nzFmzajrDc0WoNsYA3CsK22MLF','description','iEqkFYqYfh4x87i2MxfqK6','objectclass',['ipService']]]];
+$op{280}=['insert/new','add',['ou=argh,dc=test,dc=it','attr',['ou','argh','objectclass',['organizationalUnit']]]];
+$op{288}=['insert/new','add',['nisMapEntry=LD7wG4eeparmSV6CpLRanEbsarxeYO2RoFFdjw,ou=argh,dc=test,dc=it','attr',['nisMapEntry','LD7wG4eeparmSV6CpLRanEbsarxeYO2RoFFdjw','nisMapName','0IEej7jWowUcJszGenrkA','cn','PYMuMF4nRe2PPEDdj8y548yPIel','objectclass',['nisObject']]]];
+$op{294}=['delete/leaf','delete','nisMapEntry=LD7wG4eeparmSV6CpLRanEbsarxeYO2RoFFdjw,ou=argh,dc=test,dc=it'];

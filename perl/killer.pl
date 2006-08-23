@@ -28,21 +28,22 @@ killer.pl [OPTIONS] COMMAND ...
 
  Commands:
    test-random
-     Options:
-       --attempts -a ATTEMPTS
-       --seed -e SEED
-       --stats -t
-       --dump -d [DUMPFILE]
-       --style -s STYLE
-       --iterations -i ITERATIONS
+     --attempts -a ATTEMPTS
+     --seed -e SEED
+     --stats -t
+     --dump -d [DUMPFILE]
+     --style -s STYLE
+     --iterations -i ITERATIONS
 
-   test-play
+   test-play [FILENAME]
+     --stats -t
+     --dump -d [DUMPFILE]
+     --style -s STYLE
 
    dump-schema [OPTIONS] [FILE]
-     Options:
-       --mangle -m
-       --style -s STYLE
-       --parsed -p
+     --mangle -m
+     --style -s STYLE
+     --parsed -p
 
    dump-config
 
@@ -147,23 +148,22 @@ sub cmd_test_random() {
     $i++;
   }
 
-
   print 'Hint: maybe you forgot to specify the -i parameter?' . "\n" if(!$config{'iterations'});
   print "status=\"completed\"\n" if(!$status);
   print 'seed="' . $random->seed() . "\"\n";
 
   if($config{'stats'}) {
-    print '========= Statistics' . "\n";
+    print STDERR '========= Statistics' . "\n";
     my $total;
     my %stats=$operations->stats();
     foreach (keys %stats) {
       print STDERR $_ . ': ' . $stats{$_} . "\n";
       $total+=$stats{$_};
     }
-    print '======' . "\n";
+    print STDERR '======' . "\n";
   
-    print  $total . ' operations were performed.' . "\n";
-    print  $missed . ' operations were missed.' . "\n";
+    print  STDERR $total . ' operations were performed.' . "\n";
+    print  STDERR $missed . ' operations were missed.' . "\n";
   }
 
   return $status ? 0 : 3;

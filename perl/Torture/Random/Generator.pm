@@ -10,6 +10,8 @@ use Torture::Debug;
 use Torture::Random::Attributes;
 use Torture::Utils;
 
+use Data::Dumper;
+
 sub g_dn_invented() {
   my $self=shift;
   my $context=shift;
@@ -102,27 +104,114 @@ sub g_object_new() {
   }
 }
 
-sub g_dn_inserted_leaf_node() {
+sub g_dn_nonexisting() {
   my $self=shift;
   my $context=shift;
-  my ($leaf, $parent, $rela);
 
-    # Get a random leaf of the tree
-  $leaf=$self->{'random'}->element($context, [$self->{'track'}->leaves()]);
-  return undef if(!$leaf);
+    # Choose a random parent
+  my $parent=$self->parent($context);
+  return undef if(!$parent);
+
+    # Invent a random child
+  $parent=$self->dn($context, $parent);
+  return undef if(!$parent);
+
+  return ($parent);
+}
+
+
+sub g_dn_alias_noparent() {
+  my $self=shift;
+  my $context=shift;
+  my $leaf=shift;
 
     # Get the relative dn of the entry
-  $rela=Torture::Utils::dnChild($leaf);
+  my $rela=Torture::Utils::dnChild($leaf);
+
+    # Choose a random parent
+  my $parent=$self->parent($context);
+  return undef if(!$parent);
+
+    # Invent a random child
+  $parent=$self->dn($context, $parent);
+  return undef if(!$parent);
+
+  return ($rela . ',' . $parent) 
+}
+
+sub g_dn_alias_descendant() {
+  my $self=shift;
+  my $context=shift;
+  my $leaf=shift;
+
+    # Get the relative dn of the entry
+  my $rela=Torture::Utils::dnChild($leaf);
+
+    # Get a random parent
+  my $parent=$self->descendant($context, $leaf);
+  $parent=$leaf if(!$parent);
+  return ($rela . ',' . $parent);
+}
+
+sub g_dn_alias_ok() {
+  my $self=shift;
+  my $context=shift;
+  my $leaf=shift;
+
+    # Get the relative dn of the entry
+  my $rela=Torture::Utils::dnChild($leaf);
 
     # Get a random parent
   for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
-    $parent=$self->parent($context);
+    my $parent=$self->parent($context);
     return undef if(!$parent);
-    return ($leaf, $rela . ',' . $parent) 
-	    if(!$self->{'track'}->exist($rela . ',' . $parent) && $parent ne $leaf);
+    return ($rela . ',' . $parent) 
+	    if(!$self->{'track'}->exist($rela . ',' . $parent) && $parent !~ /$leaf$/);
   }
 
   return undef;
+}
+
+sub g_dn_attralias_sameparent_ok() {
+  my $self=shift;
+  my $context=shift;
+  my $dn=shift;
+
+  my $node=[$dn, $self->{'track'}->get($dn)];
+  my $parent=&Torture::Utils::dnParent(${$node}[0]);
+  my $child=&Torture::Utils::dnChild(${$node}[0]);
+  my $attr=&Torture::Utils::dnAttrib($child);
+  my %attrs;
+
+  return undef if(!${$node}[2]);
+  my @parse=@{${$node}[2]};
+  while($_=shift(@parse)) {
+    if($_ =~ /^\Q$attr\E$/ || $_ =~ /^objectclass$/i) {
+      shift(@parse);
+      next;
+    }
+    $attrs{$_}=shift(@parse);
+  }
+
+  return undef if(keys(%attrs) < 1);
+  print &Data::Dumper::Dumper(\%attrs);
+
+  my $touse=$self->{'random'}->element($self->{'random'}->context($context), [ keys(%attrs) ]); 
+  print $touse . '=' . $attrs{$touse} . ',' . $parent;
+  return $touse . '=' . $attrs{$touse} . ',' . $parent;
+}
+
+sub g_dn_alias_sameparent_ok() {
+  my $self=shift;
+  my $context=shift;
+  my $leaf=shift;
+
+    # Get the relative dn of the entry
+  my $parent=Torture::Utils::dnParent($leaf);
+  my $child=Torture::Utils::dnChild($leaf);
+  my $attrib=Torture::Utils::dnAttrib($child);
+	  
+  return $self->dn($context, $parent, $attrib);
 }
 
 sub g_object_ok() {
@@ -153,19 +242,23 @@ sub g_object_existing() {
     # Try to fetch object and return it
   $retval=$self->{'track'}->get($parent);
   return ([$parent, @{$retval}]) if(@{$retval});
-
   return undef;
 }
 
 
 my %generators = (
-  'dn/inserted/parent(dn/inserted/leaf)' => \&g_dn_inserted_leaf_node,
+  'dn/alias/ok' => \&g_dn_alias_ok,
+  'dn/alias/descendant' => \&g_dn_alias_descendant,
+  'dn/alias/noparent' => \&g_dn_alias_noparent,
+  'dn/alias/sameparent/ok' => \&g_dn_alias_sameparent_ok,
+  'dn/attralias/sameparent/ok' => \&g_dn_attralias_sameparent_ok,
   'dn/invented' => \&g_dn_invented,
   'dn/inserted' => \&g_dn_inserted,
   'dn/inserted/brench' => \&g_dn_inserted_brench,
   'dn/inserted/leaf' => \&g_dn_inserted_leaf,
   'dn/deleted' => \&g_dn_deleted,
   'dn/rootdn' => \&g_dn_root,
+  'dn/nonexisting' => \&g_dn_nonexisting,
   'object/noparent' => \&g_object_noparent,
   'object/ok' => \&g_object_ok,
   'object/new' => \&g_object_new,
@@ -219,7 +312,7 @@ sub generate()  {
   RBC::Check::Value($self->{'generators'}->{$what});
 
   Torture::Debug::message('generator/making', join(':', caller()) . " generating $what\n");
-  return &{$self->{'generators'}->{$what}}($self, $context);
+  return &{$self->{'generators'}->{$what}}($self, $context, @_);
 }
 
 sub g_random_objectclass($$) {
@@ -246,6 +339,20 @@ sub prepare($$) {
   delete($self->{'schema'});
   return;
 }
+
+sub descendant() {
+  my $self = shift;
+  my $context = shift;
+  my $dn = shift;
+
+    # Ok, return rootdn (or undef), if there are no entries
+    # we can use as parents 
+  my @known=$self->{'track'}->children($dn);
+  return $dn if(!@known);
+
+  return $self->{'random'}->element($self->{'random'}->context($context), [ $dn, @known ]); 
+}
+
 
 sub parent() {
   my $self = shift;

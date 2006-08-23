@@ -15,7 +15,6 @@ sub new(@) {
   $self->{'leaves'} = {};
   $self->{'branches'} = {};
   $self->{'deleted'} = {};
-  $self->{'data'} = {};
 
   bless($self, $name);
   return $self;
@@ -44,7 +43,6 @@ sub add() {
     # now it's there again...
   delete($self->{'deleted'}->{$dn});
   $self->{'nodes'}->{$dn}++;
-  $self->{'data'}->{$dn}=${$array}[1];
 
     # Try to stay on the safe side avoid adding any
     # rootdn parent on the branches tree
@@ -76,7 +74,6 @@ sub delete() {
   delete($self->{'nodes'}->{$dn});
   delete($self->{'leaves'}->{$dn});
   delete($self->{'branches'}->{$dn});
-  delete($self->{'data'}->{$dn});
 
     # Look for parent node
   my $parent = Torture::Utils::dnParent($dn);
@@ -114,9 +111,8 @@ sub move(@) {
 
     # Now, just update references, without
     # caring about reentrancy
-  my $data=$self->{'data'}->{$old};
   $self->Torture::Tracker::delete($old);
-  $self->Torture::Tracker::add([$new, $data]);
+  $self->Torture::Tracker::add([$new]);
 
   return;
 }
