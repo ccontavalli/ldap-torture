@@ -1,0 +1,19 @@
+enable=TRUE,cn=EEnGunSA3,dc=test,dc=itstatus="error"
+error="65 object class 'mailModuleStatus' requires attribute 'force'"
+operation="rename/attribute/ok"
+failed=['move','force=FALSE,cn=EEnGunSA3,dc=test,dc=it','enable=TRUE,cn=EEnGunSA3,dc=test,dc=it']
+seed="2435844096"
+========= Statistics
+delete/rootdn: 7
+delete/leaf: 3
+move/descendant: 2
+rename/attribute/ok: 1
+insert/new: 6
+insert/existing: 2
+delete/deleted: 2
+insert/noparent: 2
+rename/ok: 3
+delete/invented: 5
+======
+33 operations were performed.
+45 operations were missed.

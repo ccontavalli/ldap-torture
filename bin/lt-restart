@@ -32,6 +32,7 @@ test -r "$lt_root/conf/torturer.conf" || {
 . "$lt_root/conf/torturer.conf"
 
 $lt_slapd_stop
+sleep 1
 $lt_root/bin/lt-clean
 $lt_root/bin/lt-prepare
 $lt_slapd_start

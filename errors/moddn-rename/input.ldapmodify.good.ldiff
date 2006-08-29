@@ -1,0 +1,4 @@
+dn: force=FALSE,cn=J9v5sLCeU0zyJ,dc=test,dc=it
+changetype: moddn
+newrdn: force=TRUE
+deleteoldrdn: 1

@@ -165,8 +165,10 @@ sub g_dn_alias_ok() {
   for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
     my $parent=$self->parent($context);
     return undef if(!$parent);
-    return ($rela . ',' . $parent) 
-	    if(!$self->{'track'}->exist($rela . ',' . $parent) && $parent !~ /$leaf$/);
+    if(!$self->{'track'}->exist($rela . ',' . $parent) && $parent !~ /\Q$leaf\E$/) {
+#      print $rela . ',' . $parent . " ($leaf)\n";
+      return ($rela . ',' . $parent) 
+    }
   }
 
   return undef;
@@ -177,15 +179,17 @@ sub g_dn_attralias_sameparent_ok() {
   my $context=shift;
   my $dn=shift;
 
-  my $node=[$dn, $self->{'track'}->get($dn)];
+  my $node=[$dn, @{$self->{'track'}->get($dn)}];
   my $parent=&Torture::Utils::dnParent(${$node}[0]);
   my $child=&Torture::Utils::dnChild(${$node}[0]);
   my $attr=&Torture::Utils::dnAttrib($child);
   my %attrs;
 
   return undef if(!${$node}[2]);
+
   my @parse=@{${$node}[2]};
   while($_=shift(@parse)) {
+#    print 'considering: ' . $_ . "\n";
     if($_ =~ /^\Q$attr\E$/ || $_ =~ /^objectclass$/i) {
       shift(@parse);
       next;
@@ -194,11 +198,15 @@ sub g_dn_attralias_sameparent_ok() {
   }
 
   return undef if(keys(%attrs) < 1);
-  print &Data::Dumper::Dumper(\%attrs);
 
-  my $touse=$self->{'random'}->element($self->{'random'}->context($context), [ keys(%attrs) ]); 
-  print $touse . '=' . $attrs{$touse} . ',' . $parent;
-  return $touse . '=' . $attrs{$touse} . ',' . $parent;
+  for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
+    my $touse=$self->{'random'}->element($self->{'random'}->context($context), [ keys(%attrs) ]); 
+  #  print $touse . '=' . $attrs{$touse} . ',' . $parent;
+    my $retval=$touse . '=' . Torture::Utils::attribEscape($attrs{$touse}) . ',' . $parent;
+    return $retval if(!$self->{'track'}->exist($retval));
+  }
+
+  return undef;
 }
 
 sub g_dn_alias_sameparent_ok() {

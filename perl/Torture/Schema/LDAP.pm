@@ -98,6 +98,11 @@ sub load_add_attribute($$$$) {
     Torture::Debug::message('schema/attributes', "(no-equality)");
     return undef;
   }
+    # This is needed for openldap 2.3
+  if($attr->{'x-ordered'}) {
+    Torture::Debug::message('schema/attributes', "(x-ordered)");
+    return undef;
+  }
 
   Torture::Debug::message('schema/syntax', "$name -- " . $attr->{'syntax'} . "\n");
   if($self->{'attribute-whitelist'}->{$attr->{'syntax'}}) {

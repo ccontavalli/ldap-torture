@@ -46,7 +46,7 @@ sub add() {
 
     # Try to stay on the safe side avoid adding any
     # rootdn parent on the branches tree
-  return if(!$parent || grep(/(^$parent$|,$parent$)/, @{$self->{'rootdns'}}));
+  return if(!$parent || grep(/(^\Q$parent\E$|,\Q$parent\E$)/, @{$self->{'rootdns'}}));
 
     # Ok, remember the dn was inserted
   $self->{'leaves'}->{$dn}++;
@@ -78,7 +78,7 @@ sub delete() {
     # Look for parent node
   my $parent = Torture::Utils::dnParent($dn);
   return if(!$parent || !$self->{'nodes'}->{$parent});
-  return if(grep(/(^$parent$|,$parent$)/, @{$self->{'rootdns'}}));
+  return if(grep(/(^\Q$parent\E$|,\Q$parent\E$)/, @{$self->{'rootdns'}}));
 
     # Now, tell parent he has one less 
     # children

@@ -1,0 +1,40 @@
+dn: dc=test,dc=it
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: nodomain
+dc: test
+structuralObjectClass: organization
+entryUUID: 1a716fcc-c89a-102a-9e7d-bb8a27c16332
+creatorsName:
+modifiersName:
+createTimestamp: 20060825152829Z
+modifyTimestamp: 20060825152829Z
+entryCSN: 20060825152829Z#000000#00#000000
+
+dn: cn=J9v5sLCeU0zyJ,dc=test,dc=it
+cn: J9v5sLCeU0zyJ
+ipNetworkNumber: 0Yf8n
+description: P2Ubmox1MKmvhoBah
+objectClass: ipNetwork
+structuralObjectClass: ipNetwork
+entryUUID: 1bf5f8cc-c89a-102a-8d09-4b732e5bcd85
+creatorsName:
+createTimestamp: 20060825152831Z
+entryCSN: 20060825152831Z#000000#00#000000
+modifiersName:
+modifyTimestamp: 20060825152831Z
+
+dn: force=FALSE,cn=J9v5sLCeU0zyJ,dc=test,dc=it
+force: FALSE
+enable: TRUE
+remove: FALSE
+objectClass: mailModuleStatus
+structuralObjectClass: mailModuleStatus
+entryUUID: 1bf6ea16-c89a-102a-8d0a-4b732e5bcd85
+creatorsName:
+createTimestamp: 20060825152831Z
+entryCSN: 20060825152831Z#000001#00#000000
+modifiersName:
+modifyTimestamp: 20060825152831Z
+

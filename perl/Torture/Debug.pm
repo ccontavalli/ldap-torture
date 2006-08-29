@@ -21,7 +21,7 @@ my %errors = (
 	'LDAP/add' => 0,
 	'LDAP/delete' => 0,
 	'LDAP/move' => 0,
-	'LDAP/rename' => 0
+	'LDAP/rename' => 0 
 );
 
 sub message($$) {
@@ -29,7 +29,7 @@ sub message($$) {
   my (@message) = (@_);
 
   return if(!$errors{$name});
-  print STDERR join(' ', @message);
+  print STDERR join(' ', @message) . "\n";
 
   return;
 }

@@ -9,12 +9,27 @@ use strict;
 sub attribEscape($) {
   my $dn=shift;
 
+  RBC::Check::Value($dn);
+
   $dn =~ s/([,+"\\<>;#])/\\$1/g;
   $dn =~ s/^ /\\ /;
   $dn =~ s/ $/\\ /;
 
   return $dn; 
 }
+
+sub attribUnescape($) {
+  my $dn=shift;
+
+  RBC::Check::Value($dn);
+
+  $dn =~ s/\\([,+"\\<>;#])/$1/g;
+  $dn =~ s/^\\ / /;
+  $dn =~ s/\\ $/ /;
+
+  return $dn; 
+}
+
 
 sub dnAbsolute($) {
   return !dnRelative(@_);

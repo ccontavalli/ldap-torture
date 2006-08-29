@@ -8,7 +8,8 @@ use strict;
 package Torture::Operations::move;
 
 
-#  'move/leaf/changingattribute'
+#  'move/renaming/ok'
+#  'move/renaming/changingattribute'
 
 sub move_leaf_ok() {
   my $main = shift;
@@ -64,7 +65,7 @@ my $operations = [
 
   { aka => 'rename/attribute/ok',
     name => 'changes name of an object under another name',
-    func => [ \&Torture::Operations::action_server, 'move' ],
+    func => [ \&Torture::Operations::action_server, 'copy' ],
     args => [ 'dn/inserted', 'dn/attralias/sameparent/ok' ],
     res => [ \&move_leaf_ok ]}, 
 

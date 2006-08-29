@@ -81,6 +81,7 @@ sub o_prepare() {
 
 sub o_perform() {
   my $self = shift;
+  my $name = shift;
   my $context = shift;
   my $operation = shift;
   my @args = @_;
@@ -111,6 +112,7 @@ sub o_perform() {
 
 sub o_verify() {
   my $self = shift;
+  my $name = shift;
   my $operation = shift;
 
   my $result = shift;

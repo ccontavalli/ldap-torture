@@ -135,8 +135,8 @@ sub cmd_test_random() {
     print {$config{'dump'}} '$op{' . $i . '}=' . 
       &Data::Dumper::Dumper([$rand->{'aka'}, @args]) . ";\n" if($config{'dump'});
 
-    my $result=$operations->o_perform($random->context($context, $i), $rand, @args);
-    $status=$operations->o_verify($rand, $result, \@args);
+    my $result=$operations->o_perform($rand->{'aka'}, $random->context($context, $i), $rand, @args);
+    $status=$operations->o_verify($rand->{'aka'}, $rand, $result, \@args);
 
     if($status) {
       print "status=\"error\"\n";

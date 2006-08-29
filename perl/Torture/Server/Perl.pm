@@ -9,6 +9,8 @@ use Torture::Utils;
 use Torture::Server;
 use Torture::Tracker;
 
+use Data::Dumper;
+
 our (@ISA);
 @ISA = ('Torture::Server', 'Torture::Tracker');
 
@@ -72,7 +74,7 @@ sub delete(@) {
     # Remove reference to children from parent
   if($self->{'parent2child'}->{$parent}) {
     $self->{'parent2child'}->{$parent}=
-     	[grep(!/$dn/, @{$self->{'parent2child'}->{$parent}})];
+     	[grep(!/\Q$dn\E/, @{$self->{'parent2child'}->{$parent}})];
 
       # If parent has no more children, remove 
       # parent from parent2child hash
@@ -80,6 +82,7 @@ sub delete(@) {
       if(!@{$self->{'parent2child'}->{$parent}});
   }
   delete($self->{'childdata'}->{$dn});
+#  print 'deleting ' . $dn . "\n"; 
 
     # Now, get the children of this node 
   $children=$self->{'parent2child'}->{$dn};
@@ -118,6 +121,8 @@ sub add(@) {
 
     # Now, add node...
   push(@{$self->{'parent2child'}->{$parent}}, $dn);
+
+#  print 'adding ' . $dn . "\n";
   $self->{'childdata'}->{$dn}=\@args;
   $self->{'parent2child'}->{$dn}=();
 
@@ -154,7 +159,7 @@ sub copy(@) {
   my @array = ($old);
   while(my $child = shift(@array)) {
       # Calculate new name of children
-    my $child_new=($child =~ /(.*)$old$/)[0] . $new;
+    my $child_new=($child =~ /(.*)\Q$old\E$/)[0] . $new;
     
       # Give tracker a chance to update its own 
       # references
@@ -163,6 +168,7 @@ sub copy(@) {
       # Ok, data of children must now be indexed under new name
 #    $self->{'childdata'}->{$child_new}=$self->{'childdata'}->{$child};
     $self->{'childdata'}->{$child_new}=$self->replaceattr($child, $child_new, $self->{'childdata'}->{$child});
+    delete($self->{'childdata'}->{$child}) if($child ne $child_new);
 
       # If the children we are renaming is a leaf (eg, has no children), we are done
     if(!defined($self->{'parent2child'}->{$child}) || !@{$self->{'parent2child'}->{$child}}) {
@@ -176,49 +182,60 @@ sub copy(@) {
         # ... remember we have to update it
       push(@array, $p2c);
         # ... update the relations...
-      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c =~ /(.*)$old$/)[0] . $new);
+      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c =~ /(.*)\Q$old\E$/)[0] . $new);
     }
   }
 
     # Ok, remove old dn from parent
   if(defined($self->{'parent2child'}->{$parent_old}) && @{$self->{'parent2child'}->{$parent_old}}) {
     $self->{'parent2child'}->{$parent_old}=
-    	[grep(!/^$old$/, @{$self->{'parent2child'}->{$parent_old}})];
+    	[grep(!/^\Q$old\E$/, @{$self->{'parent2child'}->{$parent_old}})];
   }
 
   push(@{$self->{'parent2child'}->{$parent_new}}, $new);
   return;
 }
 
-#    $self->{'childdata'}->{$child_new}=$self->replaceattr($child, $child_new, $self->{'childdata'}->{$child});
 sub replaceattr($$$) {
   my $self = shift;
   my $old = shift;
   my $new = shift;
   my $data = shift;
+  
+  if(!$data) {
+    print STDERR 'replacing: ' . $old . ' with ' . $new . "\n";
+    print STDERR Data::Dumper::Dumper($self->{'childdata'});
+  }
 
   RBC::Check::Value($old);
   RBC::Check::Value($new);
   RBC::Check::Array($data);
 
+  $old=Torture::Utils::dnChild($old);
   $new=Torture::Utils::dnChild($new);
-  my $attr=Torture::Utils::dnAttrib($new);
-  my $value=Torture::Utils::dnValue($new); 
+  return $data if($old eq $new);
+
+  my $oattr=Torture::Utils::dnAttrib($old);
+  my $ovalue=Torture::Utils::dnValue($old);
+
+  my $nattr=Torture::Utils::dnAttrib($new);
+  my $nvalue=Torture::Utils::dnValue($new); 
 
   my @result;
   my @array=@{${$data}[1]};
-  while($_=shift(@array)) {
-    if($_ =~ /^\Q$attr\E$/) {
-      push(@result, $attr);
-      push(@result, $value);
-      shift(@array);
-      next;
+  while(my $uattr=shift(@array)) {
+    my $uvalue=shift(@array);
+    if($uattr eq $nattr && $uvalue eq Torture::Utils::attribUnescape($ovalue)) {
+      push(@result, $uattr);
+      push(@result, Torture::Utils::attribUnescape($nvalue));
+      last;
     }
-    push(@result, $_);
-    push(@result, shift(@array));
+    push(@result, $uattr);
+    push(@result, $uvalue);
   }
 
-  return ['attr', \@result ];
+#  print 'RESULT: ' . "@result" . "\n";
+  return ['attr', [ @result, @array ] ];
 }
 
 
@@ -252,7 +269,7 @@ sub move(@) {
   my @array = ($old);
   while(my $child = shift(@array)) {
       # Calculate new name of children
-    my $child_new=($child =~ /(.*)$old$/)[0] . $new;
+    my $child_new=($child =~ /(.*)\Q$old\E$/)[0] . $new;
     
       # Give tracker a chance to update its own 
       # references
@@ -262,7 +279,7 @@ sub move(@) {
     $self->{'childdata'}->{$child_new}=$self->replaceattr($child, $child_new, $self->{'childdata'}->{$child});
 # ... rename attributes of the children!!!
 #print '---' . Data::Dumper::Dumper($child, $child_new, $self->{'childdata'}->{$child_new}) . "\n";
-    delete($self->{'childdata'}->{$child});
+    delete($self->{'childdata'}->{$child}) if($child ne $child_new);
 
       # If the children we are renaming is a leaf (eg, has no children), we are done
     if(!defined($self->{'parent2child'}->{$child}) || !@{$self->{'parent2child'}->{$child}}) {
@@ -278,7 +295,7 @@ sub move(@) {
         # ... remember we have to update it
       push(@array, $p2c);
         # ... update the relations...
-      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c =~ /(.*)$old$/)[0] . $new);
+      push(@{$self->{'parent2child'}->{$child_new}}, ($p2c =~ /(.*)\Q$old\E$/)[0] . $new);
     }
       # The old node has no more children now :)
     delete($self->{'parent2child'}->{$child});
@@ -287,7 +304,7 @@ sub move(@) {
     # Ok, remove old dn from parent
   if(defined($self->{'parent2child'}->{$parent_old}) && @{$self->{'parent2child'}->{$parent_old}}) {
     $self->{'parent2child'}->{$parent_old}=
-    	[grep(!/^$old$/, @{$self->{'parent2child'}->{$parent_old}})];
+    	[grep(!/^\Q$old\E$/, @{$self->{'parent2child'}->{$parent_old}})];
 
     delete($self->{'parent2child'}->{$parent_old})
       if(!@{$self->{'parent2child'}->{$parent_old}});

@@ -2,6 +2,7 @@
 
 use strict;
 package RBC::Check;
+use Carp;
 
 sub Die(@) {
   RBC::Check::die([caller()], 'Die', 'suicided as requested by application');
@@ -15,11 +16,12 @@ sub die(@) {
   	') ' . (@parameters ? join(' ', @parameters) : '(unknown)') . "\n";
 
   print STDERR "---------------\nstack trace follows:\n";
-  for($i=1; $i < 10; $i++) {
-    my ($package, $filename, $line, $sub)=caller($i);
-    last if(!defined($package));
-    print STDERR '   ' . $package . ':' . $filename . ':' . $line . ':' . $sub . "\n";
-  }
+  Carp::confess('Aborted.');
+#  for($i=1; $i < 10; $i++) {
+#    my ($package, $filename, $line, $sub)=caller($i);
+#    last if(!defined($package));
+#    print STDERR '   ' . $package . ':' . $filename . ':' . $line . ':' . $sub . "\n";
+#  }
   print STDERR "---------------\n";
   CORE::die 'Aborted.';
 }
