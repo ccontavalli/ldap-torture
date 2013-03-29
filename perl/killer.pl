@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use Time::HiRes;
 use Carp;
 
 use Torture::Server::LDAP;
@@ -121,6 +122,11 @@ sub cmd_test_random() {
     $config{'dump'}=$file;
   }
 
+  my $time;
+  if($config{'stats'}) {
+    $time=Time::HiRes::time();
+  }
+
   my ($context, $status);
   my @ops=$operations->known();
   for(my $i=0; $i < $config{'iterations'};) {
@@ -141,6 +147,7 @@ sub cmd_test_random() {
     if($status) {
       print "status=\"error\"\n";
       print "error=\"$status\"\n";
+      print "command=\"$i\"\n";
       print "operation=\"". $rand->{'aka'} . "\"\n";
       print "failed=" . &Data::Dumper::Dumper(\@args) . "\n";
       last;
@@ -153,6 +160,8 @@ sub cmd_test_random() {
   print 'seed="' . $random->seed() . "\"\n";
 
   if($config{'stats'}) {
+    my $delta = Time::HiRes::time() - $time;
+
     print STDERR '========= Statistics' . "\n";
     my $total;
     my %stats=$operations->stats();
@@ -162,8 +171,11 @@ sub cmd_test_random() {
     }
     print STDERR '======' . "\n";
   
-    print  STDERR $total . ' operations were performed.' . "\n";
-    print  STDERR $missed . ' operations were missed.' . "\n";
+    print  STDERR 'performed operations: ' . $total . "\n";
+    print  STDERR 'missed operations: ' . $missed . "\n";
+    print  STDERR 'attempts per missed operation: ' .  $self->{'config'}->{'gen-attempts'} . "\n";
+    print  STDERR 'total execution time: ' . sprintf("%.6f", $delta) . "\n";
+    print  STDERR 'operations per second: ' . sprintf("%.2f", $total / $delta) . "\n";
   }
 
   return $status ? 0 : 3;
@@ -223,6 +235,11 @@ sub cmd_test_play() {
     $config{'dump'}=$file;
   }
 
+  my $time;
+  if($config{'stats'}) {
+    $time=Time::HiRes::time();
+  }
+
   my ($status, $i) = (undef, 0);
   my %index=$operations->index();
   foreach (sort {$a <=> $b} (keys(%op))) {
@@ -238,8 +255,8 @@ sub cmd_test_play() {
     print {$config{'dump'}} '$op{' . $i++ . '}=' . 
       &Data::Dumper::Dumper([$operation->{'aka'}, @args]) . ";\n" if($config{'dump'});
 
-    my $result=$operations->o_perform(undef, $operation, @args);
-    $status=$operations->o_verify($operation, $result, \@args);
+    my $result=$operations->o_perform($operation->{'aka'}, undef, $operation, @args);
+    $status=$operations->o_verify($operation->{'aka'}, $operation, $result, \@args);
 
     if($status) {
       print "status=\"error\"\n";
@@ -253,16 +270,20 @@ sub cmd_test_play() {
 
   print "status=\"completed\"\n" if(!$status);
   if($config{'stats'}) {
-    print '========= Statistics' . "\n";
-    my $total=0;
+    my $delta = Time::HiRes::time() - $time;
+
+    print STDERR '========= Statistics' . "\n";
+    my $total;
     my %stats=$operations->stats();
     foreach (keys %stats) {
       print STDERR $_ . ': ' . $stats{$_} . "\n";
       $total+=$stats{$_};
     }
-    print '======' . "\n";
+    print STDERR '======' . "\n";
   
-    print  $total . ' operations were performed.' . "\n";
+    print  STDERR 'performed operations: ' . $total . "\n";
+    print  STDERR 'total execution time: ' . sprintf("%.6f", $delta) . "\n";
+    print  STDERR 'operations per second: ' . sprintf("%.2f", $total / $delta) . "\n";
   }
 
   return $status ? 0 : 3;

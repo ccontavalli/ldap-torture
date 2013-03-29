@@ -61,8 +61,10 @@ sub add() {
 sub delete() {
   my $self = shift;
   my $dn = shift;
+  my $data = shift;
 
   RBC::Check::Value($dn);
+  RBC::Check::Array($data);
 
     # return immediately if this node had
     # not been tracked 
@@ -70,7 +72,7 @@ sub delete() {
 
     # Start by deleting any reference to the
     # node, remembering it was deleted
-  $self->{'deleted'}->{$dn}++;
+  $self->{'deleted'}->{$dn}=$data;
   delete($self->{'nodes'}->{$dn});
   delete($self->{'leaves'}->{$dn});
   delete($self->{'branches'}->{$dn});
@@ -98,9 +100,11 @@ sub move(@) {
   my $self = shift;
   my $old = shift;
   my $new = shift;
+  my $olddata = shift;
 
   RBC::Check::Value($old);
   RBC::Check::Value($new);
+  RBC::Check::Value($olddata);
   
     # Ok, make sure $new is an absolute dn
   if(Torture::Utils::dnRelative($new)) {
@@ -111,7 +115,7 @@ sub move(@) {
 
     # Now, just update references, without
     # caring about reentrancy
-  $self->Torture::Tracker::delete($old);
+  $self->Torture::Tracker::delete($old, $olddata);
   $self->Torture::Tracker::add([$new]);
 
   return;
@@ -121,6 +125,7 @@ sub copy(@) {
   my $self = shift;
   my $old = shift;
   my $new = shift;
+  my $olddata = shift;
 
   RBC::Check::Value($old);
   RBC::Check::Value($new);
@@ -134,6 +139,7 @@ sub copy(@) {
 
     # Now, just update references, without
     # caring about reentrancy
+  $self->Torture::Tracker::delete($old, $olddata);
   $self->Torture::Tracker::add([$new]);
 
   return;

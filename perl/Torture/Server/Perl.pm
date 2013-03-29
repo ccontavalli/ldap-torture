@@ -63,10 +63,6 @@ sub delete(@) {
 
   RBC::Check::Value($dn);
 
-    # Ok, give a chance to tracker to 
-    # update its own references
-  $self->SUPER::delete($dn);
-
     # Ok, calculate parent of current node
   $parent=Torture::Utils::dnParent($dn);
   RBC::Check::Value($parent);
@@ -81,6 +77,11 @@ sub delete(@) {
     delete($self->{'parent2child'}->{$parent})
       if(!@{$self->{'parent2child'}->{$parent}});
   }
+
+    # Ok, give a chance to tracker to 
+    # update its own references
+  $self->SUPER::delete($dn, $self->{'childdata'}->{$dn},
+	$self->{'childdata'}->{$dn});
   delete($self->{'childdata'}->{$dn});
 #  print 'deleting ' . $dn . "\n"; 
 
@@ -103,6 +104,8 @@ sub delete(@) {
 sub add(@) {
   my $self=shift;
   my $array=shift;
+
+#  print Data::Dumper::Dumper($array) . "\n";
 
   RBC::Check::Array($array);
 
@@ -163,7 +166,7 @@ sub copy(@) {
     
       # Give tracker a chance to update its own 
       # references
-    $self->SUPER::copy($child, $child_new);
+    $self->SUPER::copy($child, $child_new, $self->{'childdata'}->{$child});
 
       # Ok, data of children must now be indexed under new name
 #    $self->{'childdata'}->{$child_new}=$self->{'childdata'}->{$child};
@@ -273,7 +276,7 @@ sub move(@) {
     
       # Give tracker a chance to update its own 
       # references
-    $self->SUPER::move($child, $child_new);
+    $self->SUPER::move($child, $child_new, $self->{'childdata'}->{$child});
 
       # Ok, data of children must now be indexed under new name
     $self->{'childdata'}->{$child_new}=$self->replaceattr($child, $child_new, $self->{'childdata'}->{$child});

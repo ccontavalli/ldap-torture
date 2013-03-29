@@ -23,11 +23,11 @@ my $operations = [
     args => [ 'dn/rootdn' ],
     res => [ \&Torture::Operations::ldap_code, 50 ]},
 
-#  { aka => 'delete/brench',
-#    name => 'delete a brench from the ldap tree',
-#    func => [ \&Torture::Operations::action_server, 'delete'],
-#    args => [ 'dn/inserted/brench' ],
-#    res => [ \&Torture::Operations::ldap_succeed, 'hdb' ]},
+  { aka => 'delete/brench',
+    name => 'delete a brench from the ldap tree',
+    func => [ \&Torture::Operations::action_server, 'delete'],
+    args => [ 'dn/inserted/brench' ],
+    res => [ \&Torture::Operations::ldap_code, 66 ]},
 
   { aka => 'delete/invented',
     name => 'delete something invented, which does not' .

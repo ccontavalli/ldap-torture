@@ -62,9 +62,27 @@ sub g_dn_deleted() {
 
 
   my $obj=$self->{'random'}->element($context, [$self->{'track'}->deleted()]);
-
   return ($obj ? ($obj) : undef);
 }
+
+sub g_object_deleted() {
+  my $self=shift;
+  my $context=shift;
+
+    # Create a random object under this non-existing child
+  my $obj;
+  for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
+    $obj=$self->{'random'}->element($context, [$self->{'track'}->deleted()]);
+    last if(!$obj);
+
+    my $parent=&Torture::Utils::dnParent($obj);
+    return [ $obj, @{$self->{'track'}->{'deleted'}->{$obj}} ]
+	    if($self->{'track'}->exist($parent));
+  }
+
+  return undef;
+}
+
 
 sub g_object_noparent() {
   my $self=shift;
@@ -102,6 +120,8 @@ sub g_object_new() {
 
     return ($object) if(!$self->{'track'}->exist($object->[0]));
   }
+
+  return undef;
 }
 
 sub g_dn_nonexisting() {
@@ -270,6 +290,7 @@ my %generators = (
   'object/noparent' => \&g_object_noparent,
   'object/ok' => \&g_object_ok,
   'object/new' => \&g_object_new,
+  'object/deleted' => \&g_object_deleted,
   'object/existing' => \&g_object_existing
 );
 

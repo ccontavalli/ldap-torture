@@ -32,6 +32,11 @@ sub move_leaf_ok() {
   return $result->code . ' ' . $result->error;
 }
 
+# missing:
+#   move under a different parent changing the rdn 
+#   move under a different parent changing the 
+#      attribute used for the rdn
+
 my $operations = [ 
   { aka => 'move/ok',
     name => 'move a random object under another parent, without changing the rdn',

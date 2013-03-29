@@ -9,13 +9,18 @@ package Torture::Operations::insert;
 
 # missing:
 #   insert/invalid
-#   insert/deleted
 
 my $operations = [ 
   { aka => 'insert/new',
     name => 'insert a randomly generated entry into the database',
     func => [ \&Torture::Operations::action_server, 'add' ],
     args => [ 'object/new' ],
+    res => [ \&Torture::Operations::ldap_code, 0 ]}, 
+
+  { aka => 'insert/deleted',
+    name => 'insert a randomly generated entry into the database',
+    func => [ \&Torture::Operations::action_server, 'add' ],
+    args => [ 'object/deleted' ],
     res => [ \&Torture::Operations::ldap_code, 0 ]}, 
 
   { aka => 'insert/existing',
