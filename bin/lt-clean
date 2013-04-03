@@ -39,9 +39,10 @@ test -d "$directory" || {
   exit 2
 }
 
-find "$directory" -type f -maxdepth 1 \! -name 'DB_CONFIG' -print0 | xargs -0 rm -f
+find "$directory" -maxdepth 1 -type f \! -name 'DB_CONFIG' -print0 | xargs -0 rm -f
 test -f "$directory/DB_CONFIG" || {
-  echo "WARNING: file DB_CONFIG does not exist... is that ok?"
+  echo "WARNING: file DB_CONFIG does not exist... this means bad performance" 1>&2
+  echo "and possibly db corruption, depending on bdb version." 1>&2
 }
 
 echo "$directory - cleaned"
