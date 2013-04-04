@@ -79,12 +79,13 @@ Running ldap-torture
 
 2) Verify that it is working:
 
-    $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-config
-    $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-schema
+    $ cd perl # This is actually important!
+    $ ./killer.pl -s ldap://127.0.0.1:9009/ dump-config
+    $ ./killer.pl -s ldap://127.0.0.1:9009/ dump-schema
 
 3) Run a small test:
   
-    $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ test-random -t -i 10
+    $ ./killer.pl -s ldap://127.0.0.1:9009/ test-random -t -i 10
 
    Here, `-t` prints statistics, while `-i 10` performs 10
    iterations.
