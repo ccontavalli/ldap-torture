@@ -31,7 +31,7 @@ sub new() {
     srand($seed);
   } else {
     srand();
-    $self->{'seed'} = int(rand(~0));
+    $self->{'seed'} = int(rand(0xffffffff));
     srand($self->{'seed'});
   }
 
