@@ -149,7 +149,7 @@ sub g_dn_alias_noparent() {
   my $rela=Torture::Utils::dnChild($leaf);
 
     # Choose a random parent
-  my $parent=$self->parent($context);
+  my $parent=$self->remote_parent($context, $rela, $leaf);
   return undef if(!$parent);
 
     # Invent a random child
@@ -180,16 +180,8 @@ sub g_dn_alias_ok() {
 
     # Get the relative dn of the entry
   my $rela=Torture::Utils::dnChild($leaf);
-
-    # Get a random parent
-  for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
-    my $parent=$self->parent($context);
-    return undef if(!$parent);
-    if(!$self->{'track'}->exist($rela . ',' . $parent) && $parent !~ /\Q$leaf\E$/) {
-#      print $rela . ',' . $parent . " ($leaf)\n";
-      return ($rela . ',' . $parent) 
-    }
-  }
+  my $parent=$self->remote_parent($context, $rela, $leaf);
+  return undef if(!$parent);
 
   return undef;
 }
@@ -383,6 +375,7 @@ sub descendant() {
 }
 
 
+# Returns a valid and usable parent, any possible node in the ldap tree.
 sub parent() {
   my $self = shift;
   my $context = shift;
@@ -398,6 +391,23 @@ sub parent() {
   }
 
   return $self->{'random'}->element($self->{'random'}->context($context), [ $rootdn, @known ]); 
+}
+
+# Returns a valid and usable parent that is not a child of the specified node or the node itself.
+sub remote_parent() {
+  my $self = shift;
+  my $context = shift;
+  my $rela = shift;
+  my $leaf = shift;
+
+    # Get a random parent
+  for(my $i=0; $i < $self->{'config'}->{'gen-attempts'}; $i++) {
+    my $parent=$self->parent($context);
+    return undef if(!$parent);
+    if(!$self->{'track'}->exist($rela . ',' . $parent) && $parent !~ /\Q$leaf\E$/) {
+      return ($rela . ',' . $parent) 
+    }
+  }
 }
 
 sub dn(@) {

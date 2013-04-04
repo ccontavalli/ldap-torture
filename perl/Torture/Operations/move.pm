@@ -48,7 +48,7 @@ my $operations = [
     name => 'move a random object under one of its children (or itself), without changing the rdn',
     func => [ \&Torture::Operations::action_server, 'move' ],
     args => [ 'dn/inserted', 'dn/alias/descendant' ],
-    res => [ \&Torture::Operations::ldap_code, 32]}, 
+    res => [ \&Torture::Operations::ldap_code, 53]}, 
 
   { aka => 'move/tononexisting',
     name => 'move a random object under a non-existing parent, without changing the rdn',
