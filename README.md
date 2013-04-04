@@ -29,6 +29,10 @@ openldap, and you are ok with using the included example config file.
 For other systems, the instructions here should be enough to get you
 started.
 
+
+Installing OpenLDAP
+-------------------
+
 1) Install openldap and useful tools:
 
    $ sudo apt-get install slapd ldap-utils
@@ -64,7 +68,26 @@ started.
    to killall -TERM slapd, and restart it without -d Any, so to avoid
    spamming your screen.
 
-7) Run ldap-torture.
+
+
+Running ldap-torture
+--------------------
+
+1) Install libnet-ldap-perl:
+   
+   $ sudo apt-get install libnet-ldap-perl
+
+2) Verify that it is working:
+
+   $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-config
+   $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-schema
+
+3) Run a small test:
+  
+   $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ test-random -t -i 10
+
+   Here, `-t` prints statistics, while `-i 10` performs 10
+   iterations.
 
 
 Issues? Questions? Updates?
