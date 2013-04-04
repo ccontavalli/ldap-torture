@@ -35,28 +35,28 @@ Installing OpenLDAP
 
 1) Install openldap and useful tools:
 
-   $ sudo apt-get install slapd ldap-utils
+    $ sudo apt-get install slapd ldap-utils
 
 2) Create a database directory (has to be the same one specified in
    your slapd.conf file):
 
-   $ mkdir -p /tmp/slapd
+    $ mkdir -p /tmp/slapd
 
 3) Create an empty ldap database with basic data:
 
-   $ /usr/sbin/slapadd -f ./examples/slapd.conf < ./examples/base.ldiff
+    $ /usr/sbin/slapadd -f ./examples/slapd.conf < ./examples/base.ldiff
 
 4) Start slapd. I generally suggest to start it with debugging enabled
    until you can get it running successfully:
 
-   $ /usr/sbin/slapd -d'Any' -f./examples/slapd.conf -h "ldap://127.0.0.1:9009/"
+    $ /usr/sbin/slapd -d'Any' -f./examples/slapd.conf -h "ldap://127.0.0.1:9009/"
 
    Note that this will start slapd listening on port 9009 on localhost
    only.
 
 5) Verify that slapd is up and running:
 
-   $ ldapsearch -x -H "ldap://127.0.0.1:9009/" -b dc=test,dc=it
+    $ ldapsearch -x -H "ldap://127.0.0.1:9009/" -b dc=test,dc=it
 
    Note that slapd has been configured to ask for no password. An error here
    most likely means that slapd had some trouble starting. Errors are not
@@ -75,16 +75,16 @@ Running ldap-torture
 
 1) Install libnet-ldap-perl:
    
-   $ sudo apt-get install libnet-ldap-perl
+    $ sudo apt-get install libnet-ldap-perl
 
 2) Verify that it is working:
 
-   $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-config
-   $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-schema
+    $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-config
+    $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ dump-schema
 
 3) Run a small test:
   
-   $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ test-random -t -i 10
+    $ ./perl/killer.pl -s ldap://127.0.0.1:9009/ test-random -t -i 10
 
    Here, `-t` prints statistics, while `-i 10` performs 10
    iterations.
